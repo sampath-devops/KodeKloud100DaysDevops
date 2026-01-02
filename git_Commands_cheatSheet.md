@@ -56,3 +56,65 @@
 - git remote -v → View remotes
 - git fetch → Download changes without merging
 - git pull → Fetch + merge changes
+
+## 🛠️ Git Troubleshooting Commands
+
+## 🔄 Push / Pull Issues
+❌ Rejected – non-fast-forward
+ - git pull --rebase
+
+# 👉 Rebase local commits on top of remote
+
+- git push --force-with-lease
+# 👉 Safe force push (preferred over --force)
+
+# ❌ Your branch is behind
+- git fetch origin
+- git status
+
+
+# 👉 Check remote changes before merging
+
+##⚠️ Merge Conflicts
+# 🔍 Identify Conflicted Files
+- git status
+
+# 🧩 Open Conflict Markers
+- git diff
+
+# ✅ After Resolving Conflicts
+- git add <file>
+- git commit
+
+❌ Abort a Merge
+git merge --abort
+
+❌ Abort a Rebase
+git rebase --abort
+
+🔄 Undo & Recovery
+❌ Undo Last Commit (Keep Changes)
+git reset --soft HEAD~1
+
+❌ Undo Last Commit (Discard Changes – Dangerous)
+git reset --hard HEAD~1
+
+🧯 Recover Deleted Commits
+git reflog
+git reset --hard <commit-id>
+
+📦 Stash Issues
+❌ Accidentally Stashed Changes
+git stash list
+git stash apply stash@{0}
+
+❌ Remove All Stashes
+git stash clear
+
+🌐 Remote Repository Issues
+❌ Wrong Remote URL
+git remote set-url origin <new-url>
+
+❌ Remove and Re-add Remote
+git remote remove origin
+git remote add origin <repo-url>
