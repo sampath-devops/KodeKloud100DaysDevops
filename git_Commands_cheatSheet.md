@@ -82,39 +82,39 @@
 # 🧩 Open Conflict Markers
 - git diff
 
-# ✅ After Resolving Conflicts
+✅ After Resolving Conflicts
 - git add <file>
 - git commit
 
 ❌ Abort a Merge
-git merge --abort
+- git merge --abort
 
 ❌ Abort a Rebase
-git rebase --abort
+- git rebase --abort
 
-🔄 Undo & Recovery
+## 🔄 Undo & Recovery
 ❌ Undo Last Commit (Keep Changes)
-git reset --soft HEAD~1
+- git reset --soft HEAD~1
 
 ❌ Undo Last Commit (Discard Changes – Dangerous)
-git reset --hard HEAD~1
+- git reset --hard HEAD~1
 
 🧯 Recover Deleted Commits
-git reflog
-git reset --hard <commit-id>
+- git reflog
+- git reset --hard <commit-id>
 
-📦 Stash Issues
+## 📦 Stash Issues
 ❌ Accidentally Stashed Changes
-git stash list
-git stash apply stash@{0}
+- git stash list
+- git stash apply stash@{0}
 
 ❌ Remove All Stashes
-git stash clear
+- git stash clear
 
 🌐 Remote Repository Issues
 ❌ Wrong Remote URL
-git remote set-url origin <new-url>
+- git remote set-url origin <new-url>
 
 ❌ Remove and Re-add Remote
-git remote remove origin
-git remote add origin <repo-url>
+- git remote remove origin
+- git remote add origin <repo-url>
