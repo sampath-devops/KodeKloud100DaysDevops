@@ -1000,9 +1000,169 @@ Linux Commands
             bfb9172..c5fc3c2  master -> master
             max (master)$ 
 # Task 34: Git Hook
-  # Requirement:
-        The Nautilus application development team was working on a git repository /opt/news.git which is cloned under /usr/src/kodekloudrepos directory present on Storage server in Stratos DC. The team want to setup a hook on this repository, please find below more details:
+   # Requirement:
+        The Nautilus application development team was working on a git repository /opt/blog.git which is cloned under /usr/src/kodekloudrepos directory present on Storage server in Stratos DC. The team want to setup a hook on this repository, please find below more details:
             Merge the feature branch into the master branch, but before pushing your changes complete below point.
             Create a post-update hook in this git repository so that whenever any changes are pushed to the master branch, it creates a release tag with name release-2023-06-15, where 2023-06-15 is supposed to be the current date. For example if today is 20th June, 2023 then the release tag must be release-2023-06-20. Make sure you test the hook at least once and create a release tag for today's release.
             Finally remember to push your changes.
             Note: Perform this task using the natasha user, and ensure the repository or existing directory permissions are not altered.
+  # Solution:
+            # 0. Ssh into the storage server 
+            ssh natasha@ststor01
+
+            # 1. Navigate to the bare repository hooks directory
+            cd /opt/blog.git/hooks
+
+            # 2. Create the post-update hook from sample (or new file)
+            cp post-update.sample post-update
+
+            # 3. Replace content with this script
+            cat > post-update << 'EOF'
+            #!/bin/sh
+            # post-update hook: always create today's release tag for master
+
+            DATE=$(date +%F)
+
+            # Check if master branch changed
+            CHANGED_MASTER=0
+            for ref in "$@"
+            do
+                if echo "$ref" | grep -q "refs/heads/master"; then
+                    CHANGED_MASTER=1
+                    break
+                fi
+            done
+
+            # If master changed or stdin is empty, attempt to create tag
+            if [ $CHANGED_MASTER -eq 1 ] || [ -z "$@" ]; then
+                echo "Creating release tag for $DATE..."
+                if ! git rev-parse "release-$DATE" >/dev/null 2>&1; then
+                    git tag -a "release-$DATE" -m "Release for $DATE"
+                else
+                    echo "Tag release-$DATE already exists"
+                fi
+            fi
+            EOF
+
+            # 4. Make the hook executable
+            chmod +x post-update
+
+            # 5. In your working clone, merge feature into master
+            cd /usr/src/kodekloudrepos/blog
+            git checkout master
+            git merge --no-ff feature -m "Merge feature into master"
+
+            # 6. Push master to the bare repository to trigger the hook
+            git push origin master
+
+            # 7. Fetch tags in your clone and verify
+            git fetch --tags
+            git tag
+            git show release-$(date +%F)
+
+            # 8. Optional: make a dummy commit to force hook execution
+            touch trigger_hook.txt
+            git add trigger_hook.txt
+            git commit -m "Trigger post-update hook"
+            git push origin master
+# Task 35: Install Docker Packages and Start Docker Service
+  # Requirement:
+        The Nautilus DevOps team aims to containerize various applications following a recent meeting with the application development team. They intend to conduct testing with the following steps:
+            Install docker-ce and docker compose packages on App Server 1.
+            Initiate the docker service.
+  # Solution:
+            1  sudo dnf update -y
+            2  sudo dnf install -y dnf-plugins-core
+            3  sudo dnf config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+            4  sudo dnf install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+            5  sudo systemctl enable --now docker
+            6  systemctl start docker
+            7  systemctl status focker
+            8  systemctl status docker
+            9  docker compose version
+# Task 36: Deploy Nginx Container on Application Server
+  # Requirement:
+        The Nautilus DevOps team is conducting application deployment tests on selected application servers. They require a nginx container deployment on Application Server 1. Complete the task with the following instructions:
+            On Application Server 1 create a container named nginx_1 using the nginx image with the alpine tag. Ensure container is in a running state.
+  # Solution:
+        [root@stapp01 ~]# sudo docker pull nginx:alpine
+        alpine: Pulling from library/nginx
+        1074353eec0d: Pull complete 
+        25f453064fd3: Pull complete 
+        567f84da6fbd: Pull complete 
+        da7c973d8b92: Pull complete 
+        33f95a0f3229: Pull complete 
+        085c5e5aaa8e: Pull complete 
+        0abf9e567266: Pull complete 
+        de54cb821236: Pull complete 
+        Digest: sha256:8491795299c8e739b7fcc6285d531d9812ce2666e07bd3dd8db00020ad132295
+        Status: Downloaded newer image for nginx:alpine
+        docker.io/library/nginx:alpine
+        [root@stapp01 ~]# docker image
+
+        Usage:  docker image COMMAND
+
+        Manage images
+
+        Commands:
+        build       Build an image from a Dockerfile
+        history     Show the history of an image
+        import      Import the contents from a tarball to create a filesystem image
+        inspect     Display detailed information on one or more images
+        load        Load an image from a tar archive or STDIN
+        ls          List images
+        prune       Remove unused images
+        pull        Download an image from a registry
+        push        Upload an image to a registry
+        rm          Remove one or more images
+        save        Save one or more images to a tar archive (streamed to STDOUT by default)
+        tag         Create a tag TARGET_IMAGE that refers to SOURCE_IMAGE
+
+        Run 'docker image COMMAND --help' for more information on a command.
+        [root@stapp01 ~]# docker images
+        REPOSITORY   TAG       IMAGE ID       CREATED       SIZE
+        nginx        alpine    04da2b0513cd   2 weeks ago   53.7MB
+        [root@stapp01 ~]# docker run --name nginx_1 -p 8080:80 -d nginx:alpine
+        4263782aaee3904d895030e0705e201b23973021d359ebcbf1ed7d0a49f880fc
+        [root@stapp01 ~]# docker ps
+        CONTAINER ID   IMAGE          COMMAND                  CREATED         STATUS         PORTS                  NAMES
+        4263782aaee3   nginx:alpine   "/docker-entrypoint.…"   6 seconds ago   Up 4 seconds   0.0.0.0:8080->80/tcp   nginx_1
+        [root@stapp01 ~]# docker status nginx_1
+        docker: 'status' is not a docker command.
+        See 'docker --help'
+        [root@stapp01 ~]# docker log nginx_1
+        docker: 'log' is not a docker command.
+        See 'docker --help'
+        [root@stapp01 ~]# docker logs nginx_1
+        /docker-entrypoint.sh: /docker-entrypoint.d/ is not empty, will attempt to perform configuration
+        /docker-entrypoint.sh: Looking for shell scripts in /docker-entrypoint.d/
+        /docker-entrypoint.sh: Launching /docker-entrypoint.d/10-listen-on-ipv6-by-default.sh
+        10-listen-on-ipv6-by-default.sh: info: Getting the checksum of /etc/nginx/conf.d/default.conf
+        10-listen-on-ipv6-by-default.sh: info: Enabled listen on IPv6 in /etc/nginx/conf.d/default.conf
+        /docker-entrypoint.sh: Sourcing /docker-entrypoint.d/15-local-resolvers.envsh
+        /docker-entrypoint.sh: Launching /docker-entrypoint.d/20-envsubst-on-templates.sh
+        /docker-entrypoint.sh: Launching /docker-entrypoint.d/30-tune-worker-processes.sh
+        /docker-entrypoint.sh: Configuration complete; ready for start up
+        2026/01/05 10:41:42 [notice] 1#1: using the "epoll" event method
+        2026/01/05 10:41:42 [notice] 1#1: nginx/1.29.4
+        2026/01/05 10:41:42 [notice] 1#1: built by gcc 15.2.0 (Alpine 15.2.0) 
+        2026/01/05 10:41:42 [notice] 1#1: OS: Linux 5.15.0-1083-gcp
+        2026/01/05 10:41:42 [notice] 1#1: getrlimit(RLIMIT_NOFILE): 1048576:1048576
+        2026/01/05 10:41:42 [notice] 1#1: start worker processes
+        2026/01/05 10:41:42 [notice] 1#1: start worker process 84
+        2026/01/05 10:41:42 [notice] 1#1: start worker process 85
+        2026/01/05 10:41:42 [notice] 1#1: start worker process 86
+        2026/01/05 10:41:42 [notice] 1#1: start worker process 87
+        2026/01/05 10:41:42 [notice] 1#1: start worker process 88
+        2026/01/05 10:41:42 [notice] 1#1: start worker process 89
+        2026/01/05 10:41:42 [notice] 1#1: start worker process 90
+        2026/01/05 10:41:42 [notice] 1#1: start worker process 91
+        2026/01/05 10:41:42 [notice] 1#1: start worker process 92
+        2026/01/05 10:41:42 [notice] 1#1: start worker process 93
+        2026/01/05 10:41:42 [notice] 1#1: start worker process 94
+        2026/01/05 10:41:42 [notice] 1#1: start worker process 95
+        2026/01/05 10:41:42 [notice] 1#1: start worker process 96
+        2026/01/05 10:41:42 [notice] 1#1: start worker process 97
+        2026/01/05 10:41:42 [notice] 1#1: start worker process 98
+        2026/01/05 10:41:42 [notice] 1#1: start worker process 99
+        [root@stapp01 ~]# 
