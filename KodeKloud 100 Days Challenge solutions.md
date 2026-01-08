@@ -1166,3 +1166,157 @@ Linux Commands
         2026/01/05 10:41:42 [notice] 1#1: start worker process 98
         2026/01/05 10:41:42 [notice] 1#1: start worker process 99
         [root@stapp01 ~]# 
+# Task 37: Copy File to Docker Container
+  # Requirement:
+        The Nautilus DevOps team possesses confidential data on App Server 3 in the Stratos Datacenter. A container named ubuntu_latest is running on the same server.
+            Copy an encrypted file /tmp/nautilus.txt.gpg from the docker host to the ubuntu_latest container located at /tmp/. Ensure the file is not modified during this operation.
+  # Solution:
+        [banner@stapp03 ~]$ docker ps 
+        CONTAINER ID   IMAGE     COMMAND       CREATED         STATUS         PORTS     NAMES
+        681c5cfa3719   ubuntu    "/bin/bash"   2 minutes ago   Up 2 minutes             ubuntu_latest
+        [banner@stapp03 ~]$ cd /tmp/
+        [banner@stapp03 tmp]$ ls
+        nautilus.txt.gpg
+        systemd-private-6363bdae8c754aac9938e9db5c38ec8f-dbus-broker.service-aNVjSh
+        systemd-private-6363bdae8c754aac9938e9db5c38ec8f-systemd-hostnamed.service-VsG2bs
+        systemd-private-6363bdae8c754aac9938e9db5c38ec8f-systemd-logind.service-LYdf3L
+        [banner@stapp03 tmp]$ docker cp ./nautilus.txt.gpg 681c5cfa3719:/tmp
+        Successfully copied 2.05kB to 681c5cfa3719:/tmp
+        [banner@stapp03 tmp]$ docker exec -it 681c5cfa3719 
+        "docker exec" requires at least 2 arguments.
+        See 'docker exec --help'.
+
+        Usage:  docker exec [OPTIONS] CONTAINER COMMAND [ARG...]
+
+        Execute a command in a running container
+        [banner@stapp03 tmp]$ docker exec -it 681c5cfa3719 /bin/bash
+        root@681c5cfa3719:/# ls -ltr /tmp/
+        total 4
+        -rw-r--r-- 1 root root 105 Jan  6 12:14 nautilus.txt.gpg
+        root@681c5cfa3719:/# exit
+        exit
+        [banner@stapp03 tmp]$ 
+# Task 38: Pull Docker Image
+  # Requirement: 
+        Nautilus project developers are planning to start testing on a new project. As per their meeting with the DevOps team, they want to test containerized environment application features. As per details shared with DevOps team, we need to accomplish the following task:
+            a. Pull busybox:musl image on App Server 3 in Stratos DC and re-tag (create new tag) this image as busybox:blog.
+  # Solution: 
+        docker pull busybox:musl
+        docker tag busybox:musl busybox:blog
+
+# Task 39: Create a Docker Image From Container
+  # Requirement:
+        One of the Nautilus developer was working to test new changes on a container. He wants to keep a backup of his changes to the container. A new request has been raised for the DevOps team to create a new image from this container. Below are more details about it:
+            a. Create an image apps:devops on Application Server 1 from a container ubuntu_latest that is running on same server.
+  # Solution:
+        [tony@stapp01 ~]$ docker ps
+        CONTAINER ID   IMAGE     COMMAND       CREATED         STATUS         PORTS     NAMES
+        fb56e436735a   ubuntu    "/bin/bash"   3 minutes ago   Up 3 minutes             ubuntu_latest
+        [tony@stapp01 ~]$ docker commit -a "tony" -m "COntainer backup" fb56e436735a apps:devops
+        sha256:4cee7799f2a062d50be621074795aea224b3feea1829fb2631444f3078c69f54
+        [tony@stapp01 ~]$ docker images
+        REPOSITORY   TAG       IMAGE ID       CREATED         SIZE
+        apps         devops    4cee7799f2a0   4 seconds ago   135MB
+        ubuntu       latest    c3a134f2ace4   2 months ago    78.1MB
+        [tony@stapp01 ~]$ 
+# Task 40: Docker EXEC Operations
+  # Requirement:
+        One of the Nautilus DevOps team members was working to configure services on a kkloud container that is running on App Server 3 in Stratos Datacenter. Due to some personal work he is on PTO for the rest of the week, but we need to finish his pending work ASAP. Please complete the remaining work as per details given below:
+            a. Install apache2 in kkloud container using apt that is running on App Server 3 in Stratos Datacenter.
+            b. Configure Apache to listen on port 5001 instead of default http port. Do not bind it to listen on specific IP or hostname only, i.e it should listen on localhost, 127.0.0.1, container ip, etc.
+            c. Make sure Apache service is up and running inside the container. Keep the container in running state at the end.
+
+  # Solution: 
+            docker exec -it d97d86a96f1e /bin/bash
+                cat /etc/os-release 
+            5  apt update -y
+            6  apt install apache2 -y
+            7  systemctl status apache2
+            8  system status apache2
+            9  system status httpd
+        10  system status apache
+        11  cd /etc/
+        12  ls
+        13  cd apache2/
+        14  ls
+        15  cat apache2.conf 
+        16  vi apache2.conf 
+        17  vim apache2.conf 
+        18  nano apache2.conf 
+        19  apt install vim
+        20  vi apache2.conf 
+        21  ls -ltr
+        22  vi ports.conf 
+        23  systemctl enable apache2
+        24  service enable apache2
+        25  service apache2 enable
+        26  service apache2 status
+        27  service apache2 start
+        28  service apache2 status
+        29  cat http://localhost:5001
+        30  cat http://127.0.0:5001
+        31  cat http://127.0.0.1:5001
+        32  ss -tulpn
+        33  apt install net-tools
+        34  ss
+        35  netstat
+        36  netstat -tunlp
+        37  ipconfig
+        38  ifconfig
+        39  exit
+        40  ls
+        41  curl http://localhost:5001
+        42  curl http://127.0.01:5001
+        43  curl http://127.0.0.1:5001
+# Task 41: Write a Docker File
+  # Requirement:
+        As per recent requirements shared by the Nautilus application development team, they need custom images created for one of their projects. Several of the initial testing requirements are already been shared with DevOps team. Therefore, create a docker file /opt/docker/Dockerfile (please keep D capital of Dockerfile) on App server 3 in Stratos DC and configure to build an image with the following requirements: 
+            a. Use ubuntu:24.04 as the base image.
+            b. Install apache2 and configure it to work on 5002 port. (do not update any other Apache configuration settings like document root etc).
+  # Solution: 
+        # Dockerfile
+            #################
+            FROM ubuntu:24.04
+            WORKDIR
+            RUN apt-get update -y &&\ 
+                apt-get install apache2 -y
+
+            RUN sed -i 's/80/5002/g' /etc/apache2/ports.conf && \
+                sed -i 's/80/5002/g' /etc/apache2/sites-available/000-default.conf
+            CMD ["apache2ctl", "-D", "FOREGROUND"]
+            ##################
+            ~                                                
+            [banner@stapp03 docker]$ docker build -t apache2:latest_new .
+            [+] Building 0.0s (1/1) FINISHED                                          docker:default
+            => [internal] load build definition from Dockerfile                                0.0s
+            => => transferring dockerfile: 288B                                                0.0s
+            Dockerfile:2
+            --------------------
+            1 |     FROM ubuntu:24.04
+            2 | >>> WORKDIR
+            3 |     RUN apt-get update -y &&\ 
+            4 |         apt-get install apache2 -y
+            --------------------
+            ERROR: failed to build: failed to solve: dockerfile parse error on line 2: WORKDIR requires exactly one argument
+            [banner@stapp03 docker]$ vi Dockerfile 
+            [banner@stapp03 docker]$ sudo vi Dockerfile 
+            [banner@stapp03 docker]$ docker build -t apache2:latest_new .
+            [+] Building 21.5s (7/7) FINISHED                                         docker:default
+            => [internal] load build definition from Dockerfile                                0.0s
+            => => transferring dockerfile: 280B                                                0.0s
+            => [internal] load metadata for docker.io/library/ubuntu:24.04                     0.0s
+            => [internal] load .dockerignore                                                   0.0s
+            => => transferring context: 2B                                                     0.0s
+            => [1/3] FROM docker.io/library/ubuntu:24.04                                       0.0s
+            => [2/3] RUN apt-get update -y &&    apt-get install apache2 -y                   18.5s
+            => [3/3] RUN sed -i 's/80/5002/g' /etc/apache2/ports.conf &&     sed -i 's/80/500  1.1s
+            => exporting to image                                                              1.8s 
+            => => exporting layers                                                             1.8s 
+            => => writing image sha256:b29bdb3950c9f66096df1cb5c4069dc94fd723e9e41a4da090fcc3  0.0s 
+            => => naming to docker.io/library/apache2:latest_new                               0.0s 
+            [banner@stapp03 docker]$ docker images                                                   
+            REPOSITORY   TAG          IMAGE ID       CREATED          SIZE
+            apache2      latest_new   b29bdb3950c9   10 seconds ago   256MB
+            ubuntu       24.04        602eb6fb314b   9 months ago     78.1MB
+            [banner@stapp03 docker]$ docker run -d apache2:latest_new
+
