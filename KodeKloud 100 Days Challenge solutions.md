@@ -1319,4 +1319,434 @@ Linux Commands
             apache2      latest_new   b29bdb3950c9   10 seconds ago   256MB
             ubuntu       24.04        602eb6fb314b   9 months ago     78.1MB
             [banner@stapp03 docker]$ docker run -d apache2:latest_new
+# Task 42: Create a Docker Network
+  # Requirement:
+        The Nautilus DevOps team needs to set up several docker environments for different applications. One of the team members has been assigned a ticket where he has been asked to create some docker networks to be used later. Complete the task based on the following ticket description:
+            a. Create a docker network named as official on App Server 3 in Stratos DC.
+            b. Configure it to use bridge drivers.
+            c. Set it to use subnet 172.28.0.0/24 and iprange 172.28.0.0/24.
+  # Solution: 
+        [banner@stapp03 ~]$ docker network create --driver bridge --subnet 172.28.0.0/24 --ip-range 172.28.0.0/24 official
+        713f3a55ac107a1bf5b44fe7d83c4bd4f5a20baf6ee4be82b501bad4e598e38d
+        [banner@stapp03 ~]$ docker network ls
+        NETWORK ID     NAME       DRIVER    SCOPE
+        16ec4b7db435   bridge     bridge    local
+        c6e26e05af64   host       host      local
+        febf30c5081e   none       null      local
+        713f3a55ac10   official   bridge    local
+        [banner@stapp03 ~]$ 
+# Task 43: Docker Ports Mapping
+  # Requirement:
+        The Nautilus DevOps team is planning to host an application on a nginx-based container. There are number of tickets already been created for similar tasks. One of the tickets has been assigned to set up a nginx container on Application Server 1 in Stratos Datacenter. Please perform the task as per details mentioned below:
+            a. Pull nginx:stable docker image on Application Server 1.
+            b. Create a container named blog using the image you pulled.
+            c. Map host port 6000 to container port 80. Please keep the container in running state.
+  # Solution: 
+        [tony@stapp01 ~]$ docker images
+        REPOSITORY   TAG       IMAGE ID   CREATED   SIZE
+        [tony@stapp01 ~]$ docker pull nginx:stable
+        stable: Pulling from library/nginx
+        02d7611c4eae: Pull complete 
+        11696ed710ce: Pull complete 
+        02acfc0013ce: Pull complete 
+        cad526308e1f: Pull complete 
+        0a728426e5c1: Pull complete 
+        67bac657aeb9: Pull complete 
+        4e60406108e5: Pull complete 
+        Digest: sha256:e7e2c41c74775ccfe88d07fa3d9ebc9e0d6ae5c755244bc525153b37e308f699
+        Status: Downloaded newer image for nginx:stable
+        docker.io/library/nginx:stable
+        [tony@stapp01 ~]$ docker images
+        REPOSITORY   TAG       IMAGE ID       CREATED       SIZE
+        nginx        stable    880187ad005d   10 days ago   152MB
+        [tony@stapp01 ~]$ docker run -d -p 6000:80 --name blog
+        "docker run" requires at least 1 argument.
+        See 'docker run --help'.
+
+        Usage:  docker run [OPTIONS] IMAGE [COMMAND] [ARG...]
+
+        Create and run a new container from an image
+        [tony@stapp01 ~]$ docker run -d -p 6000:80 --name blog nginx:stable
+        dba16ed401a969cb52db3b033a39ae8ae0778e7e4f3c81d870d826674e6a0e6f
+        [tony@stapp01 ~]$ docker ps
+        CONTAINER ID   IMAGE          COMMAND                  CREATED         STATUS         PORTS                  NAMES
+        dba16ed401a9   nginx:stable   "/docker-entrypoint.…"   7 seconds ago   Up 5 seconds   0.0.0.0:6000->80/tcp   blog
+        [tony@stapp01 ~]$ curl http:\\localhost:6000
+        curl: (3) URL using bad/illegal format or missing URL
+        [tony@stapp01 ~]$ curl http://localhost:6000
+        <!DOCTYPE html>
+        <html>
+        <head>
+        <title>Welcome to nginx!</title>
+        <style>
+        html { color-scheme: light dark; }
+        body { width: 35em; margin: 0 auto;
+        font-family: Tahoma, Verdana, Arial, sans-serif; }
+        </style>
+        </head>
+        <body>
+        <h1>Welcome to nginx!</h1>
+        <p>If you see this page, the nginx web server is successfully installed and
+        working. Further configuration is required.</p>
+
+        <p>For online documentation and support please refer to
+        <a href="http://nginx.org/">nginx.org</a>.<br/>
+        Commercial support is available at
+        <a href="http://nginx.com/">nginx.com</a>.</p>
+
+        <p><em>Thank you for using nginx.</em></p>
+        </body>
+        </html>
+        [tony@stapp01 ~]$ 
+# Task 44: Write a Docker Compose File
+  # Requirement:
+        The Nautilus application development team shared static website content that needs to be hosted on the httpd web server using a containerised platform. The team has shared details with the DevOps team, and we need to set up an environment according to those guidelines. Below are the details:
+            a. On App Server 2 in Stratos DC create a container named httpd using a docker compose file /opt/docker/docker-compose.yml (please use the exact name for file).
+            b. Use httpd (preferably latest tag) image for container and make sure container is named as httpd; you can use any name for service.
+            c. Map 80 number port of container with port 8089 of docker host.
+            d. Map container's /usr/local/apache2/htdocs volume with /opt/dba volume of docker host which is already there. (please do not modify any data within these locations).
+  # Solution:
+        [steve@stapp02 docker]$ cat docker-compose.yml 
+            version: '3.8'
+            services:
+                webserver:
+                image: httpd:latest
+                container_name: httpd
+                ports: 
+                    - "8089:80"
+                volumes:
+                    - /opt/dba/:/usr/local/apache2/htdocs
+
+        [steve@stapp02 docker]$ docker compose up -d
+        yaml: line 4: mapping values are not allowed in this context
+        [steve@stapp02 docker]$ sudo vi docker-compose.yml
+        [steve@stapp02 docker]$ docker compose up -d
+        yaml: line 4: mapping values are not allowed in this context
+        [steve@stapp02 docker]$ sudo vi docker-compose.yml
+        [steve@stapp02 docker]$ docker compose up -d
+        validating /opt/docker/docker-compose.yml: services.webserver additional properties 'container_ name' not allowed
+        [steve@stapp02 docker]$ sudo vi docker-compose.yml
+        [steve@stapp02 docker]$ docker compose up -d
+        validating /opt/docker/docker-compose.yml: services.webserver additional properties 'container_ name' not allowed
+        [steve@stapp02 docker]$ docker compose up -d
+        validating /opt/docker/docker-compose.yml: services.webserver additional properties 'container_ name' not allowed
+        [steve@stapp02 docker]$ sudo vi docker-compose.yml
+        [steve@stapp02 docker]$ docker compose up -d
+        WARN[0000] /opt/docker/docker-compose.yml: the attribute `version` is obsolete, it will be ignored, please remove it to avoid potential confusion 
+        [+] Running 7/7
+        ✔ webserver Pulled                                                                 5.8s 
+        ✔ 02d7611c4eae Pull complete                                                     2.7s 
+        ✔ 5a84161993ab Pull complete                                                     3.1s 
+        ✔ 4f4fb700ef54 Pull complete                                                     3.3s 
+        ✔ 8eb44842f200 Pull complete                                                     3.9s 
+        ✔ b5be9d562803 Pull complete                                                     5.1s 
+        ✔ af0709a53cc2 Pull complete                                                     5.6s 
+        [+] Running 2/2
+        ✔ Network docker_default  Created                                                  0.1s 
+        ✔ Container httpd         Started                                                  1.5s 
+        [steve@stapp02 docker]$ 
+        [steve@stapp02 docker]$ docker ps
+        CONTAINER ID   IMAGE          COMMAND              CREATED              STATUS              PORTS                  NAMES
+        8542a4bca6b0   httpd:latest   "httpd-foreground"   About a minute ago   Up About a minute   0.0.0.0:8089->80/tcp   httpd
+# Task 45: Resolve Dockerfile Issues
+  # Requirement:
+        The Nautilus DevOps team is working to create new images per requirements shared by the development team. One of the team members is working to create a Dockerfile on App Server 2 in Stratos DC. While working on it she ran into issues in which the docker build is failing and displaying errors. Look into the issue and fix it to build an image as per details mentioned below:
+            a. The Dockerfile is placed on App Server 2 under /opt/docker directory.
+            b. Fix the issues with this file and make sure it is able to build the image.
+            c. Do not change base image, any other valid configuration within Dockerfile, or any of the data been used — for example, index.html.
+            Note: Please note that once you click on FINISH button all the existing containers will be destroyed and new image will be built from your Dockerfile.
+  # Solution:
+            ## Issued Docker file
+        [steve@stapp02 docker]$ cat Dockerfile 
+        FROM httpd:2.4.43
+
+        RUN sed -i "s/Listen 80/Listen 8080/g" /usr/local/apache2/conf/httpd.conf
+
+        RUN sed -i '/LoadModule\ ssl_module modules\/mod_ssl.so/s/^#//g' conf/httpd.conf
+
+        RUN sed -i '/LoadModule\ socache_shmcb_module modules\/mod_socache_shmcb.so/s/^#//g' conf/httpd.conf
+
+        RUN sed -i '/Include\ conf\/extra\/httpd-ssl.conf/s/^#//g' conf/httpd.conf
+
+        RUN cp certs/server.crt /usr/local/apache2/conf/server.crt
+
+        RUN cp certs/server.key /usr/local/apache2/conf/server.key
+
+        RUN cp html/index.html /usr/local/apache2/htdocs/[steve@stapp02 docker]$ 
+          ## Error when we build the image from Docker file
+        [steve@stapp02 docker]$ docker build -t apache2:test .
+        [+] Building 194.7s (9/11)                                                docker:default
+        => [internal] load build definition from Dockerfile                                0.0s
+        => => transferring dockerfile: 562B                                                0.0s
+        => [internal] load metadata for docker.io/library/httpd:2.4.43                   120.9s
+        => [internal] load .dockerignore                                                   0.0s
+        => => transferring context: 2B                                                     0.0s
+        => [1/8] FROM docker.io/library/httpd:2.4.43@sha256:cd88fee4eab37f0d8cd04b06ef97  64.3s
+        => => resolve docker.io/library/httpd:2.4.43@sha256:cd88fee4eab37f0d8cd04b06ef972  0.0s
+        => => sha256:cd88fee4eab37f0d8cd04b06ef97285ca981c27b4d685f0321e6 1.86kB / 1.86kB  0.0s
+        => => sha256:53729354a74c9c146aa8726a8906e833755066ada1a478782f4d 1.37kB / 1.37kB  0.0s
+        => => sha256:f1455599cc2e008a4555f14451e590f071371d371a3b87790651 7.35kB / 7.35kB  0.0s
+        => => sha256:bf59529304463f62efa7179fa1a32718a611528cc4ce9f30c 27.09MB / 27.09MB  30.5s
+        => => sha256:3d3fecf6569b94e406086a2b68a7c8930254490b45c0de4911f497e 146B / 146B  30.6s
+        => => sha256:b5fc3125d9129e4cdd43f496195cc8f39d43e9bad171044ec 10.37MB / 10.37MB  30.8s
+        => => extracting sha256:bf59529304463f62efa7179fa1a32718a611528cc4ce9f30c0d1bbc67  2.8s
+        => => sha256:3c61041685c0f65e0b375bae6ae6bdeab9b6c20960dbef5e3 24.47MB / 24.47MB  61.0s
+        => => sha256:34b7e9053f76ca3c9dc574c5034679769256a596008efbfbff1d1b1 298B / 298B  61.1s
+        => => extracting sha256:3d3fecf6569b94e406086a2b68a7c8930254490b45c0de4911f497ea9  0.4s
+        => => extracting sha256:b5fc3125d9129e4cdd43f496195cc8f39d43e9bad171044ecb5b8f82b  1.2s
+        => => extracting sha256:3c61041685c0f65e0b375bae6ae6bdeab9b6c20960dbef5e30201db18  1.6s
+        => => extracting sha256:34b7e9053f76ca3c9dc574c5034679769256a596008efbfbff1d1b154  0.8s
+        => [2/8] RUN sed -i "s/Listen 80/Listen 8080/g" /usr/local/apache2/conf/httpd.con  1.9s
+        => [3/8] RUN sed -i '/LoadModule\ ssl_module modules\/mod_ssl.so/s/^#//g' conf/ht  2.1s
+        => [4/8] RUN sed -i '/LoadModule\ socache_shmcb_module modules\/mod_socache_shmcb  1.8s
+        => [5/8] RUN sed -i '/Include\ conf\/extra\/httpd-ssl.conf/s/^#//g' conf/httpd.co  1.7s
+        => ERROR [6/8] RUN cp certs/server.crt /usr/local/apache2/conf/server.crt          2.0s
+        ------                                                                                   
+        > [6/8] RUN cp certs/server.crt /usr/local/apache2/conf/server.crt:
+        1.957 cp: cannot stat 'certs/server.crt': No such file or directory
+        ------
+        Dockerfile:11
+        --------------------
+        9 |     RUN sed -i '/Include\ conf\/extra\/httpd-ssl.conf/s/^#//g' conf/httpd.conf
+        10 |     
+        11 | >>> RUN cp certs/server.crt /usr/local/apache2/conf/server.crt
+        12 |     
+        13 |     RUN cp certs/server.key /usr/local/apache2/conf/server.key
+        --------------------
+        ERROR: failed to build: failed to solve: process "/bin/sh -c cp certs/server.crt /usr/local/apache2/conf/server.crt" did not complete successfully: exit code: 1
+        [steve@stapp02 docker]$ ls -ltr
+        total 12
+        drwxr-xr-x 2 root root 4096 Jan  9 11:14 html
+        drwxr-xr-x 2 root root 4096 Jan  9 11:14 certs
+        -rw-r--r-- 1 root root  523 Jan  9 11:22 Dockerfile
+        [steve@stapp02 docker]$ cd certs/
+        [steve@stapp02 certs]$ ls
+        server.crt  server.key
+        [steve@stapp02 certs]$ cdv ..
+        -bash: cdv: command not found
+        [steve@stapp02 certs]$ cd ..
+        [steve@stapp02 docker]$ sudo vi Dockerfile 
+
+        We trust you have received the usual lecture from the local System
+        Administrator. It usually boils down to these three things:
+
+            #1) Respect the privacy of others.
+            #2) Think before you type.
+            #3) With great power comes great responsibility.
+
+        [sudo] password for steve: 
+        [steve@stapp02 docker]$ docker build -t apache2:test .
+        [+] Building 36.9s (9/11)                                                 docker:default
+        => [internal] load build definition from Dockerfile                                0.0s
+        => => transferring dockerfile: 620B                                                0.0s
+        => [internal] load metadata for docker.io/library/httpd:2.4.43                    30.9s
+        => [internal] load .dockerignore                                                   0.0s
+        => => transferring context: 2B                                                     0.0s
+        => [1/8] FROM docker.io/library/httpd:2.4.43@sha256:cd88fee4eab37f0d8cd04b06ef972  0.0s
+        => CACHED [2/8] RUN sed -i "s/Listen 80/Listen 8080/g" /usr/local/apache2/conf/ht  0.0s
+        => [3/8] RUN sed -i '/LoadModule\ ssl_module modules\/mod_ssl.so/s/^#//g' /usr/lo  2.2s
+        => [4/8] RUN sed -i '/LoadModule\ socache_shmcb_module modules\/mod_socache_shmcb  1.1s
+        => [5/8] RUN sed -i '/Include\ conf\/extra\/httpd-ssl.conf/s/^#//g' /usr/local/ap  1.3s
+        => ERROR [6/8] RUN cp certs/server.crt /usr/local/apache2/conf/server.crt          1.3s
+        ------                                                                                   
+        > [6/8] RUN cp certs/server.crt /usr/local/apache2/conf/server.crt:
+        1.276 cp: cannot stat 'certs/server.crt': No such file or directory
+        ------
+        Dockerfile:11
+        --------------------
+        9 |     RUN sed -i '/Include\ conf\/extra\/httpd-ssl.conf/s/^#//g' /usr/local/apache2/conf/httpd.conf
+        10 |     
+        11 | >>> RUN cp certs/server.crt /usr/local/apache2/conf/server.crt
+        12 |     
+        13 |     RUN cp certs/server.key /usr/local/apache2/conf/server.key
+        --------------------
+        ERROR: failed to build: failed to solve: process "/bin/sh -c cp certs/server.crt /usr/local/apache2/conf/server.crt" did not complete successfully: exit code: 1
+        [steve@stapp02 docker]$ sudo vi Dockerfile 
+        [steve@stapp02 docker]$ docker build -t apache2:test .
+        [+] Building 34.8s (13/13) FINISHED                                       docker:default
+        => [internal] load build definition from Dockerfile                                0.0s
+        => => transferring dockerfile: 614B                                                0.0s
+        => [internal] load metadata for docker.io/library/httpd:2.4.43                    30.2s
+        => [internal] load .dockerignore                                                   0.0s
+        => => transferring context: 2B                                                     0.0s
+        => [1/8] FROM docker.io/library/httpd:2.4.43@sha256:cd88fee4eab37f0d8cd04b06ef972  0.0s
+        => [internal] load build context                                                   0.0s
+        => => transferring context: 3.19kB                                                 0.0s
+        => CACHED [2/8] RUN sed -i "s/Listen 80/Listen 8080/g" /usr/local/apache2/conf/ht  0.0s
+        => CACHED [3/8] RUN sed -i '/LoadModule\ ssl_module modules\/mod_ssl.so/s/^#//g'   0.0s
+        => CACHED [4/8] RUN sed -i '/LoadModule\ socache_shmcb_module modules\/mod_socach  0.0s
+        => CACHED [5/8] RUN sed -i '/Include\ conf\/extra\/httpd-ssl.conf/s/^#//g' /usr/l  0.0s
+        => [6/8] COPY certs/server.crt /usr/local/apache2/conf/server.crt                  0.6s
+        => [7/8] COPY certs/server.key /usr/local/apache2/conf/server.key                  0.9s
+        => [8/8] COPY html/index.html /usr/local/apache2/htdocs/                           0.8s
+        => exporting to image                                                              2.2s
+        => => exporting layers                                                             2.2s
+        => => writing image sha256:12b4c002fed28bf06e7c0349969a28798a28cf9a5e3bf22086d0b1  0.0s
+        => => naming to docker.io/library/apache2:test                                     0.0s
+        [steve@stapp02 docker]$ 
+                ## Issue occured while replacing # while enabling the ssl config in httpd.conf file complete file path not provided
+                ## And used RUN CP command in docker file for copying the cets and html files which is not recornized so we need to COPY command in file to copy the file 
+        
+                ## After updating/correcting the Docker file
+        [steve@stapp02 docker]$ cat Dockerfile 
+            FROM httpd:2.4.43
+
+            RUN sed -i "s/Listen 80/Listen 8080/g" /usr/local/apache2/conf/httpd.conf
+
+            RUN sed -i '/LoadModule\ ssl_module modules\/mod_ssl.so/s/^#//g' /usr/local/apache2/conf/httpd.conf
+
+            RUN sed -i '/LoadModule\ socache_shmcb_module modules\/mod_socache_shmcb.so/s/^#//g' /usr/local/apache2/conf/httpd.conf
+
+            RUN sed -i '/Include\ conf\/extra\/httpd-ssl.conf/s/^#//g' /usr/local/apache2/conf/httpd.conf
+
+            COPY certs/server.crt /usr/local/apache2/conf/server.crt
+
+            COPY certs/server.key /usr/local/apache2/conf/server.key
+
+            COPY html/index.html /usr/local/apache2/htdocs/
+            [steve@stapp02 docker]$ 
+
+            [steve@stapp02 docker]$ sudo vi Dockerfile 
+            [steve@stapp02 docker]$ docker build -t apache2:test .
+            [+] Building 34.8s (13/13) FINISHED                                       docker:default
+            => [internal] load build definition from Dockerfile                                0.0s
+            => => transferring dockerfile: 614B                                                0.0s
+            => [internal] load metadata for docker.io/library/httpd:2.4.43                    30.2s
+            => [internal] load .dockerignore                                                   0.0s
+            => => transferring context: 2B                                                     0.0s
+            => [1/8] FROM docker.io/library/httpd:2.4.43@sha256:cd88fee4eab37f0d8cd04b06ef972  0.0s
+            => [internal] load build context                                                   0.0s
+            => => transferring context: 3.19kB                                                 0.0s
+            => CACHED [2/8] RUN sed -i "s/Listen 80/Listen 8080/g" /usr/local/apache2/conf/ht  0.0s
+            => CACHED [3/8] RUN sed -i '/LoadModule\ ssl_module modules\/mod_ssl.so/s/^#//g'   0.0s
+            => CACHED [4/8] RUN sed -i '/LoadModule\ socache_shmcb_module modules\/mod_socach  0.0s
+            => CACHED [5/8] RUN sed -i '/Include\ conf\/extra\/httpd-ssl.conf/s/^#//g' /usr/l  0.0s
+            => [6/8] COPY certs/server.crt /usr/local/apache2/conf/server.crt                  0.6s
+            => [7/8] COPY certs/server.key /usr/local/apache2/conf/server.key                  0.9s
+            => [8/8] COPY html/index.html /usr/local/apache2/htdocs/                           0.8s
+            => exporting to image                                                              2.2s
+            => => exporting layers                                                             2.2s
+            => => writing image sha256:12b4c002fed28bf06e7c0349969a28798a28cf9a5e3bf22086d0b1  0.0s
+            => => naming to docker.io/library/apache2:test                                     0.0s
+            [steve@stapp02 docker]$ 
+            [steve@stapp02 docker]$ docker images
+            REPOSITORY   TAG       IMAGE ID       CREATED         SIZE
+            apache2      test      12b4c002fed2   6 minutes ago   166MB
+            [steve@stapp02 docker]$ docker ps
+            CONTAINER ID   IMAGE     COMMAND   CREATED   STATUS    PORTS     NAMES
+            [steve@stapp02 docker]$ docker run -d -p 8080:80 --name apache apache2:test
+            bd30c3199b2a1c559b0b32e4954b70493e129075a12b5805255fcdde09a3fa8b
+            [steve@stapp02 docker]$ docker ps
+            CONTAINER ID   IMAGE          COMMAND              CREATED         STATUS         PORTS                  NAMES
+            bd30c3199b2a   apache2:test   "httpd-foreground"   6 seconds ago   Up 2 seconds   0.0.0.0:8080->80/tcp   apache
+            [steve@stapp02 docker]$ 
+# Task 46: Deploy an App on Docker Containers
+  # Requirement:
+        The Nautilus Application development team recently finished development of one of the apps that they want to deploy on a containerized platform. The Nautilus Application development and DevOps teams met to discuss some of the basic pre-requisites and requirements to complete the deployment. The team wants to test the deployment on one of the app servers before going live and set up a complete containerized stack using a docker compose fie. Below are the details of the task:
+            On App Server 2 in Stratos Datacenter create a docker compose file /opt/devops/docker-compose.yml (should be named exactly).
+            The compose should deploy two services (web and DB), and each service should deploy a container as per details below:
+            For web service:
+                a. Container name must be php_host.
+                b. Use image php with any apache tag. Check here for more details.
+                c. Map php_host container's port 80 with host port 5002
+                d. Map php_host container's /var/www/html volume with host volume /var/www/html.
+            For DB service:
+                a. Container name must be mysql_host.
+                b. Use image mariadb with any tag (preferably latest). Check here for more details.
+                c. Map mysql_host container's port 3306 with host port 3306
+                d. Map mysql_host container's /var/lib/mysql volume with host volume /var/lib/mysql.
+                e. Set MYSQL_DATABASE=database_host and use any custom user ( except root ) with some complex password for DB connections.
+            After running docker-compose up you can access the app with curl command curl <server-ip or hostname>:5002/
+            For more details check here.
+            Note: Once you click on FINISH button, all currently running/stopped containers will be destroyed and stack will be deployed again using your compose file.
+  # Solution:
+        [root@stapp02 devops]# cat docker-compose.yml 
+         services:
+            web:
+            image: php:apache
+            container_name: php_host
+            ports:
+                - 5002:80
+            volumes:
+                - /var/www/html:/var/www/html
+            depends_on:
+                - db
+            db:
+            image: mariadb:latest
+            container_name: mysql_host
+            ports:
+                - 3306:3306
+            volumes:
+                - /var/lib/mysql:/var/lib/mysql
+            environment:
+                MYSQL_DATABASE: database_host
+                MYSQL_USER: nautuser
+                MYSQL_PASSWORD: N@ut1lusP@ssw0rd
+                MYSQL_ROOT_PASSWORD: RootTempPass123
+        [root@stapp02 devops]# 
+        [root@stapp02 devops]# docker compose up -d
+        yaml: line 6: found character that cannot start any token
+        [root@stapp02 devops]# vi docker-compose.yml 
+        [root@stapp02 devops]# docker compose up -d
+        yaml: line 8: found character that cannot start any token  # Got this error as used Tabs instead of spaces while writing the file so yaml not identified the tabs so removed those tabs
+        [root@stapp02 devops]# vi docker-compose.yml 
+        [root@stapp02 devops]# docker compose up -d
+        [+] Running 24/24
+        ✔ db Pulled                                                                       24.8s 
+        ✔ 20043066d3d5 Pull complete                                                     6.2s 
+        ✔ 75e5c9f5eeb0 Pull complete                                                     6.8s 
+        ✔ ee5b64c3e2f5 Pull complete                                                     8.6s 
+        ✔ ba2d27f4ceca Pull complete                                                     9.3s 
+        ✔ 4be15142d46e Pull complete                                                    10.2s 
+        ✔ 9047f410cb7d Pull complete                                                    20.7s 
+        ✔ be922ac1f9ed Pull complete                                                    22.8s 
+        ✔ eca7ec75082e Pull complete                                                    24.4s 
+        ✔ web Pulled                                                                      51.3s 
+        ✔ 02d7611c4eae Pull complete                                                     6.3s 
+        ✔ c366543af204 Pull complete                                                     6.8s 
+        ✔ fceab7a457f4 Pull complete                                                    23.2s 
+        ✔ 630ea4d355f4 Pull complete                                                    27.3s 
+        ✔ 4022d3740cf9 Pull complete                                                    29.4s 
+        ✔ 40aa6e9de285 Pull complete                                                    30.8s 
+        ✔ 6cbbbdd5b16b Pull complete                                                    32.1s 
+        ✔ 925b7797c032 Pull complete                                                    33.5s 
+        ✔ 15b07802af7d Pull complete                                                    34.8s 
+        ✔ 2496601b992d Pull complete                                                    37.3s 
+        ✔ f3d9aa297f51 Pull complete                                                    39.4s 
+        ✔ e397fb01def5 Pull complete                                                    43.3s 
+        ✔ 531601cb5511 Pull complete                                                    47.2s 
+        ✔ 4f4fb700ef54 Pull complete                                                    51.0s 
+        [+] Running 3/3
+        ✔ Network devops_default  Created                                                  0.1s 
+        ✔ Container mysql_host    Started                                                 13.6s 
+        ✔ Container php_host      Started                                                  9.7s 
+        [root@stapp02 devops]# docker ps
+        CONTAINER ID   IMAGE            COMMAND                  CREATED          STATUS         PORTS                    NAMES
+        92b3b092e58e   php:apache       "docker-php-entrypoi…"   15 seconds ago   Up 5 seconds   0.0.0.0:5002->80/tcp     php_host
+        0eed9f8b88d9   mariadb:latest   "docker-entrypoint.s…"   20 seconds ago   Up 6 seconds   0.0.0.0:3306->3306/tcp   mysql_host
+        [root@stapp02 devops]# curl http://localhost:5002
+        <html>
+            <head>
+                <title>Welcome to xFusionCorp Industries!</title>
+            </head>
+
+            <body>
+                Welcome to xFusionCorp Industries!    </body>
+        </html>[root@stapp02 devops]# ipconfig
+        -bash: ipconfig: command not found
+        [root@stapp02 devops]# ifconfig
+        -bash: ifconfig: command not found
+        [root@stapp02 devops]# curl http://stapp02:5002
+        <html>
+            <head>
+                <title>Welcome to xFusionCorp Industries!</title>
+            </head>
+
+            <body>
+                Welcome to xFusionCorp Industries!    </body>
+        </html>[root@stapp02 devops]# 
+# Task 47: Docker Python App
+  # Requirement:
+        
+
 
