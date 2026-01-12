@@ -1747,6 +1747,81 @@ Linux Commands
         </html>[root@stapp02 devops]# 
 # Task 47: Docker Python App
   # Requirement:
+        A python app needed to be Dockerized, and then it needs to be deployed on App Server 1. We have already copied a requirements.txt file (having the app dependencies) under /python_app/src/ directory on App Server 1. Further complete this task as per details mentioned below:
+            Create a Dockerfile under /python_app directory:
+            Use any python image as the base image.
+            Install the dependencies using requirements.txt file.
+            Expose the port 5003.
+            Run the server.py script using CMD.
+            Build an image named nautilus/python-app using this Dockerfile.
+            Once image is built, create a container named pythonapp_nautilus:
+            Map port 5003 of the container to the host port 8092.
+            Once deployed, you can test the app using curl command on App Server 1.
+            curl http://localhost:8092/
+  # Solution: 
+        - Dockerfile: 
+            [tony@stapp01 python_app]$ cat Dockerfile 
+                                        # Pyhton Base image
+                                        FROM python:3.12-slim
+                                        # Seting up the workdirectory
+                                        WORKDIR /app
+                                        # Copying the requirements file
+                                        COPY /src/requirements.txt .
+                                        # Installing pre requirements
+                                        RUN pip install --no-cache-dir -r requirements.txt
+                                        # Copying the application source files
+                                        COPY src/ .
+                                        # Exposing the COntainer port to 5003
+                                        EXPOSE 5003
+                                        # Running the application 
+                                        CMD ["python", "server.py"]
+
+            # Building docker image from Dockerfile
+            [tony@stapp01 python_app]$ docker build -t nautilus/python-app .
+            [+] Building 226.7s (10/10) FINISHED                                      docker:default
+            => [internal] load build definition from Dockerfile                                0.0s
+            => => transferring dockerfile: 422B                                                0.0s
+            => [internal] load metadata for docker.io/library/python:3.12-slim               124.4s
+            => [internal] load .dockerignore                                                   0.0s
+            => => transferring context: 2B                                                     0.0s
+            => [1/5] FROM docker.io/library/python:3.12-slim@sha256:a75662dfec8d90bd7161c910  94.9s
+            => => resolve docker.io/library/python:3.12-slim@sha256:a75662dfec8d90bd7161c910  30.7s
+            => => sha256:5dcd5ccefc085545c8dac26ccf4ee55a19f6e5641768565304fc 1.75kB / 1.75kB  0.0s
+            => => sha256:7c5aeff4dbf98bbd70c8fa5337d3ec3a37b070ef577b3aa7954a 5.67kB / 5.67kB  0.0s
+            => => sha256:02d7611c4eae219af91448a4720bdba036575d3bc0356cfe1 29.78MB / 29.78MB  33.9s
+            => => sha256:fe2d526e7d41df5bda23740a00f6b254c44f67ce9bfc9507b36 1.29MB / 1.29MB  33.6s
+            => => sha256:61a9f733534e478a7570aaf3a154be5b9302dcf474e1fe0a8 12.11MB / 12.11MB  34.3s
+            => => sha256:a75662dfec8d90bd7161c91050be2e0a9b21d284f3b7a7253d 10.37kB / 10.37kB  0.0s
+            => => sha256:d7c2baa095fbf75d83cd43b216be2d72bef124518338e23288648ad 250B / 250B  63.7s
+            => => extracting sha256:02d7611c4eae219af91448a4720bdba036575d3bc0356cfe12774af85  2.3s
+            => => extracting sha256:fe2d526e7d41df5bda23740a00f6b254c44f67ce9bfc9507b36fb77c3  0.6s
+            => => extracting sha256:61a9f733534e478a7570aaf3a154be5b9302dcf474e1fe0a827d4b146  1.1s
+            => => extracting sha256:d7c2baa095fbf75d83cd43b216be2d72bef124518338e23288648adda  0.5s
+            => [internal] load build context                                                   0.0s
+            => => transferring context: 401B                                                   0.0s
+            => [2/5] WORKDIR /app                                                              0.5s
+            => [3/5] COPY /src/requirements.txt .                                              0.5s
+            => [4/5] RUN pip install --no-cache-dir -r requirements.txt                        4.1s
+            => [5/5] COPY src/ .                                                               1.0s 
+            => exporting to image                                                              1.2s 
+            => => exporting layers                                                             1.1s 
+            => => writing image sha256:f8aa025f567b17fec8362810b611608b8a14c3548d6df8fa29ccba  0.0s 
+            => => naming to docker.io/nautilus/python-app                                      0.0s 
+            [tony@stapp01 python_app]$ docker images                                                 
+            REPOSITORY            TAG       IMAGE ID       CREATED         SIZE
+            nautilus/python-app   latest    f8aa025f567b   7 seconds ago   132MB
+            [tony@stapp01 python_app]$ 
+            [tony@stapp01 python_app]$ docker run --name pythonapp_nautilus -d -p 8092:5003 nautilus/python-app
+            dea0707fbc3f47aa7b9ddba73f893d9b8d9027552ce3cf4702e4fc62fd12b8b2
+            [tony@stapp01 python_app]$ dcoker ps
+            -bash: dcoker: command not found
+            [tony@stapp01 python_app]$ docker ps
+            CONTAINER ID   IMAGE                 COMMAND              CREATED          STATUS         PORTS                    NAMES
+            dea0707fbc3f   nautilus/python-app   "python server.py"   12 seconds ago   Up 8 seconds   0.0.0.0:8092->5003/tcp   pythonapp_nautilus
+            [tony@stapp01 python_app]$ 
+            [tony@stapp01 python_app]$ curl http://localhost:8092
+            Welcome to xFusionCorp Industries![tony@stapp01 python_app]$ 
         
+
 
 
