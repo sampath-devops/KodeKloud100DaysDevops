@@ -1821,7 +1821,92 @@ Linux Commands
             [tony@stapp01 python_app]$ 
             [tony@stapp01 python_app]$ curl http://localhost:8092
             Welcome to xFusionCorp Industries![tony@stapp01 python_app]$ 
+# Task 48: Deploy Pods in Kubernetes Cluster
+  # Requirement:
+        The Nautilus DevOps team is diving into Kubernetes for application management. One team member has a task to create a pod according to the details below:
+                Create a pod named pod-nginx using the nginx image with the latest tag. Ensure to specify the tag as nginx:latest.
+                Set the app label to nginx_app, and name the container as nginx-container.
+                Note: The kubectl utility on jump_host is configured to operate with the Kubernetes cluster.
+
+  # Solution:
+        thor@jumphost ~$ vi nginx-pod.yaml
+        apiVersion: v1         # The version of the Kubernetes API we are using
+        kind: Pod              # We are creating a Pod resource
+        metadata:
+        name: pod-nginx      # Name of the pod
+        labels:
+            app: nginx_app     # Adds a label "app=nginx_app" to the pod
+        spec:
+        containers:
+            - name: nginx-container   # The container name inside the pod
+            image: nginx:latest     # The image the container will use
+
+        thor@jumphost ~$ kubectl get pods
+        NAME        READY   STATUS              RESTARTS   AGE
+        pod-nginx   0/1     ContainerCreating   0          8s
+        thor@jumphost ~$ kubectl get pods
+        NAME        READY   STATUS    RESTARTS   AGE
+        pod-nginx   1/1     Running   0          12s
+        thor@jumphost ~$ kubectl get pods
+        NAME        READY   STATUS    RESTARTS   AGE
+        pod-nginx   1/1     Running   0          13s
+        thor@jumphost ~$ kubectl get pods
+        NAME        READY   STATUS    RESTARTS   AGE
+        pod-nginx   1/1     Running   0          14s
+        thor@jumphost ~$ kubectl describe pod pod-nginx
+        Name:             pod-nginx
+        Namespace:        default
+        Priority:         0
+        Service Account:  default
+        Node:             kodekloud-control-plane/172.17.0.2
+        Start Time:       Fri, 23 Jan 2026 09:09:43 +0000
+        Labels:           app=nginx_app
+        Annotations:      <none>
+        Status:           Running
+        IP:               10.244.0.5
+        IPs:
+        IP:  10.244.0.5
+        Containers:
+        nginx-container:
+            Container ID:   containerd://f9b3d8de81d51b4555dc86d4fd58be3de004af68fe67e1034d8b4fef74ca6125
+            Image:          nginx:latest
+            Image ID:       docker.io/library/nginx@sha256:c881927c4077710ac4b1da63b83aa163937fb47457950c267d92f7e4dedf4aec
+            Port:           <none>
+            Host Port:      <none>
+            State:          Running
+            Started:      Fri, 23 Jan 2026 09:09:52 +0000
+            Ready:          True
+            Restart Count:  0
+            Environment:    <none>
+            Mounts:
+            /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-w88r4 (ro)
+        Conditions:
+        Type              Status
+        Initialized       True 
+        Ready             True 
+        ContainersReady   True 
+        PodScheduled      True 
+        Volumes:
+        kube-api-access-w88r4:
+            Type:                    Projected (a volume that contains injected data from multiple sources)
+            TokenExpirationSeconds:  3607
+            ConfigMapName:           kube-root-ca.crt
+            ConfigMapOptional:       <nil>
+            DownwardAPI:             true
+        QoS Class:                   BestEffort
+        Node-Selectors:              <none>
+        Tolerations:                 node.kubernetes.io/not-ready:NoExecute op=Exists for 300s
+                                    node.kubernetes.io/unreachable:NoExecute op=Exists for 300s
+        Events:
+        Type    Reason     Age   From               Message
+        ----    ------     ----  ----               -------
+        Normal  Scheduled  57s   default-scheduler  Successfully assigned default/pod-nginx to kodekloud-control-plane
+        Normal  Pulling    56s   kubelet            Pulling image "nginx:latest"
+        Normal  Pulled     49s   kubelet            Successfully pulled image "nginx:latest" in 7.090664154s (7.090686269s including waiting)
+        Normal  Created    49s   kubelet            Created container nginx-container
+        Normal  Started    48s   kubelet            Started container nginx-container
         
+
 
 
 
