@@ -1905,7 +1905,56 @@ Linux Commands
         Normal  Pulled     49s   kubelet            Successfully pulled image "nginx:latest" in 7.090664154s (7.090686269s including waiting)
         Normal  Created    49s   kubelet            Created container nginx-container
         Normal  Started    48s   kubelet            Started container nginx-container
+
+# Task 49: Deploy Applications with Kubernetes Deployments
+  # Requirement:
+        The Nautilus DevOps team is delving into Kubernetes for app management. One team member needs to create a deployment following these details:
+            Create a deployment named httpd to deploy the application httpd using the image httpd:latest (ensure to specify the tag)Note: The kubectl utility on jump_host is set up to interact with the Kubernetes cluster.
+  # Solution: 
+            ## Deploymemt yaml file ##
+            thor@jumphost ~$ vi httpd.yaml
+                    apiVersion: apps/v1
+                    kind: Deployment
+                    metadata:
+                    name: httpd-deployment
+                    labels: # Labels for the Deployment object itself
+                        app: httpd
+                        environment: production
+                    spec:
+                    replicas: 1
+                    selector:
+                        matchLabels: # Selector to find pods managed by this deployment
+                        app: httpd
+                    template:
+                        metadata:
+                        labels: # Labels for the Pods created by this deployment
+                            app: httpd
+                            tier: frontend
+                        spec:
+                        containers:
+                        - name: httpd
+                            image: httpd:latest # The container image and tag
+                            ports:
+                            - containerPort: 80
+            ==================================================================================================                            
+            thor@jumphost ~$ kubectl get namespaces
+            NAME                 STATUS   AGE
+            default              Active   37m
+            kube-node-lease      Active   37m
+            kube-public          Active   37m
+            kube-system          Active   37m
+            local-path-storage   Active   36m
+            thor@jumphost ~$ kubectl apply -f httpd.yaml 
+            deployment.apps/httpd-deployment created
+            thor@jumphost ~$ kubectl get deployment
+            NAME               READY   UP-TO-DATE   AVAILABLE   AGE
+            httpd-deployment   1/1     1            1           10s
+            thor@jumphost ~$ kubectl get pods
+            NAME                                READY   STATUS    RESTARTS   AGE
+            httpd-deployment-5c4ff7578f-fqqtj   1/1     Running   0          20s
+            thor@jumphost ~$ 
         
+
 
 
 
