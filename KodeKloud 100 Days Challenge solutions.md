@@ -1954,6 +1954,78 @@ Linux Commands
             httpd-deployment-5c4ff7578f-fqqtj   1/1     Running   0          20s
             thor@jumphost ~$ 
         
+# Task 50: Set Resource Limits in Kubernetes Pods
+  # Requirement: 
+        The Nautilus DevOps team has noticed performance issues in some Kubernetes-hosted applications due to resource constraints. To address this, they plan to set limits on resource utilization. Here are the details:
+            Create a pod named httpd-pod with a container named httpd-container. Use the httpd image with the latest tag (specify as httpd:latest). Set the following resource limits:
+
+            Requests: Memory: 15Mi, CPU: 100m
+            Limits: Memory: 20Mi, CPU: 100m
+            Note: The kubectl utility on jump_host is configured to operate with the Kubernetes cluster.
+  # Solution:
+        Below yaml manifest file will help us in creating the pod with specified resource limits
+        apiVersion: v1
+        kind: Pod
+        metadata:
+        name: httpd-pod
+        spec:
+        containers:
+        - name: httpd-container
+            image: httpd:latest
+            resources:
+            requests:
+                memory: "15Mi"
+                cpu: "100m"
+            limits:
+                memory: "20Mi"
+                cpu: "100m"
+        thor@jumphost ~$ kubectl apply -f resource-limit.yaml 
+
+# Task 51: Execute Rolling Updates in Kubernetes
+ # Requirement:
+        An application currently running on the Kubernetes cluster employs the nginx web server. The Nautilus application development team has introduced some recent changes that need deployment. They've crafted an image nginx:1.17 with the latest updates.
+            Execute a rolling update for this application, integrating the nginx:1.17 image. The deployment is named nginx-deployment.
+            Ensure all pods are operational post-update.
+            Note: The kubectl utility on jump_host is set up to operate with the Kubernetes cluster
+ # Solution: 
+        thor@jumphost ~$ kubectl get deployment
+        NAME               READY   UP-TO-DATE   AVAILABLE   AGE
+        nginx-deployment   3/3     3            3           5m45s
+        thor@jumphost ~$ kubectl get rs
+        NAME                         DESIRED   CURRENT   READY   AGE
+        nginx-deployment-989f57c54   3         3         3       5m50s
+        thor@jumphost ~$ kubectl get pods
+        NAME                               READY   STATUS    RESTARTS   AGE
+        nginx-deployment-989f57c54-c5dtr   1/1     Running   0          5m55s
+        nginx-deployment-989f57c54-f5n26   1/1     Running   0          5m55s
+        nginx-deployment-989f57c54-wcfdg   1/1     Running   0          5m55s
+        thor@jumphost ~$ 
+        thor@jumphost ~$ kubectl edit deployment nginx-deployment ## Edit the deployment using this command and update the image name to nginx:1.17
+        deployment.apps/nginx-deployment edited
+        thor@jumphost ~$ kubectl get pods
+        NAME                                READY   STATUS    RESTARTS   AGE
+        nginx-deployment-5dd558cf95-lb7zv   1/1     Running   0          44s
+        nginx-deployment-5dd558cf95-w6hzc   1/1     Running   0          46s
+        nginx-deployment-5dd558cf95-xsl2g   1/1     Running   0          52s
+        thor@jumphost ~$ kubectl get rs  # This was fetched two replica set Kubernetes will recreate a NEW ReplicaSet when you perform a rolling update and                                                    change the image in a Deployment.
+        A Deployment always creates a new ReplicaSet when:
+           -  container image changes
+           - environment variables change
+           - container command/args change
+           - config/secret mounts change
+           - labels change
+           - annotations change
+           - ports change
+           - readiness/liveness probe changes
+
+        Basically ANYTHING inside spec.template triggers a new ReplicaSet.
+        NAME                          DESIRED   CURRENT   READY   AGE
+        nginx-deployment-5dd558cf95   3         3         3       71s
+        nginx-deployment-989f57c54    0         0         0       8m26s
+        thor@jumphost ~$ kubectl get deployment
+        NAME               READY   UP-TO-DATE   AVAILABLE   AGE
+        nginx-deployment   3/3     3            3           9m7s
+        thor@jumphost ~$ 
 
 
 
