@@ -2027,7 +2027,103 @@ Linux Commands
         nginx-deployment   3/3     3            3           9m7s
         thor@jumphost ~$ 
 
+# Task 52: Revert Deployment to Previous Version in Kubernetes
+ # Requirement:
+        Earlier today, the Nautilus DevOps team deployed a new release for an application. However, a customer has reported a bug related to this recent release. Consequently, the team aims to revert to the previous version.
+            There exists a deployment named nginx-deployment; initiate a rollback to the previous revision.
+            Note: The kubectl utility on jump_host is configured to interact with the Kubernetes cluster.
+ # Solution:
+        thor@jumphost ~$ kubectl get deployment
+        NAME               READY   UP-TO-DATE   AVAILABLE   AGE
+        nginx-deployment   3/3     3            3           104s
+        thor@jumphost ~$ kubectl describe deployment nginx-deployment
+        Name:                   nginx-deployment
+        Namespace:              default
+        CreationTimestamp:      Sun, 15 Feb 2026 16:33:11 +0000
+        Labels:                 app=nginx-app
+                                type=front-end
+        Annotations:            deployment.kubernetes.io/revision: 2
+                                kubernetes.io/change-cause:
+                                kubectl set image deployment nginx-deployment nginx-container=nginx:alpine-perl --kubeconfig=/root/.kube/config --record=true
+        Selector:               app=nginx-app
+        Replicas:               3 desired | 3 updated | 3 total | 3 available | 0 unavailable
+        StrategyType:           RollingUpdate
+        MinReadySeconds:        0
+        RollingUpdateStrategy:  25% max unavailable, 25% max surge
+        Pod Template:
+        Labels:  app=nginx-app
+        Containers:
+        nginx-container:
+            Image:         nginx:alpine-perl
+            Port:          <none>
+            Host Port:     <none>
+            Environment:   <none>
+            Mounts:        <none>
+        Volumes:         <none>
+        Node-Selectors:  <none>
+        Tolerations:     <none>
+        Conditions:
+        Type           Status  Reason
+        ----           ------  ------
+        Available      True    MinimumReplicasAvailable
+        Progressing    True    NewReplicaSetAvailable
+        OldReplicaSets:  nginx-deployment-989f57c54 (0/0 replicas created)
+        NewReplicaSet:   nginx-deployment-5d44db985c (3/3 replicas created)
+        Events:
+        Type    Reason             Age    From                   Message
+        ----    ------             ----   ----                   -------
+        Normal  ScalingReplicaSet  2m11s  deployment-controller  Scaled up replica set nginx-deployment-989f57c54 to 3
+        Normal  ScalingReplicaSet  2m1s   deployment-controller  Scaled up replica set nginx-deployment-5d44db985c to 1
+        Normal  ScalingReplicaSet  115s   deployment-controller  Scaled down replica set nginx-deployment-989f57c54 to 2 from 3
+        Normal  ScalingReplicaSet  115s   deployment-controller  Scaled up replica set nginx-deployment-5d44db985c to 2 from 1
+        Normal  ScalingReplicaSet  113s   deployment-controller  Scaled down replica set nginx-deployment-989f57c54 to 1 from 2
+        Normal  ScalingReplicaSet  113s   deployment-controller  Scaled up replica set nginx-deployment-5d44db985c to 3 from 2
+        Normal  ScalingReplicaSet  111s   deployment-controller  Scaled down replica set nginx-deployment-989f57c54 to 0 from 1
+        thor@jumphost ~$ 
+        thor@jumphost ~$ 
+        thor@jumphost ~$ kubectl rollout history deployment nginx-deployment
+        deployment.apps/nginx-deployment 
+        REVISION  CHANGE-CAUSE
+        1         <none>
+        2         kubectl set image deployment nginx-deployment nginx-container=nginx:alpine-perl --kubeconfig=/root/.kube/config --record=true
 
+        thor@jumphost ~$ kubectl rollout history deployment/nginx-deployment
+        deployment.apps/nginx-deployment 
+        REVISION  CHANGE-CAUSE
+        1         <none>
+        2         kubectl set image deployment nginx-deployment nginx-container=nginx:alpine-perl --kubeconfig=/root/.kube/config --record=true
+
+        thor@jumphost ~$ kubectl rollout undo deployment nginx-deployment
+        deployment.apps/nginx-deployment rolled back
+        thor@jumphost ~$ kubectl get deployment
+        NAME               READY   UP-TO-DATE   AVAILABLE   AGE
+        nginx-deployment   3/3     3            3           6m59s
+        thor@jumphost ~$ kubectl get rs
+        NAME                          DESIRED   CURRENT   READY   AGE
+        nginx-deployment-5d44db985c   0         0         0       6m54s
+        nginx-deployment-989f57c54    3         3         3       7m4s
+        thor@jumphost ~$ kubectl get pods
+        NAME                               READY   STATUS    RESTARTS   AGE
+        nginx-deployment-989f57c54-9wpnd   1/1     Running   0          39s
+        nginx-deployment-989f57c54-fbkhz   1/1     Running   0          40s
+        nginx-deployment-989f57c54-qskkr   1/1     Running   0          37s
+        thor@jumphost ~$ kubectl history deployment nginx-deployment
+        error: unknown command "history" for "kubectl"
+        thor@jumphost ~$ kubectl rollout history deployment nginx-deployment
+        deployment.apps/nginx-deployment 
+        REVISION  CHANGE-CAUSE
+        2         kubectl set image deployment nginx-deployment nginx-container=nginx:alpine-perl --kubeconfig=/root/.kube/config --record=true
+        3         <none>
+
+        thor@jumphost ~$ 
+        ###########################################################################
+       # Roll Back to a Specific Revision
+       # If you need to roll back to a specific version that is not the immediately preceding one (for example, to revision 2), use #   the --to-revision flag.
+       # bash kubectl rollout undo deployment/<deployment-name> --to-revision=<revision-number>
+       # Monitor the Rollback Status
+       # After initiating the rollback, monitor its progress to ensure it completes successfully. The rollback is performed as a #      rolling update, so there             should be no downtime.
+       # bash kubectl rollout status deployment/<deployment-name>
+       #############################################################################
 
 
 
