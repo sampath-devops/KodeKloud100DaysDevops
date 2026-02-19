@@ -2125,5 +2125,474 @@ Linux Commands
        # bash kubectl rollout status deployment/<deployment-name>
        #############################################################################
 
+# Task 53: Resolve VolumeMounts Issue in Kubernetes
+ # Requirement:
+        We encountered an issue with our Nginx and PHP-FPM setup on the Kubernetes cluster this morning, which halted its functionality. Investigate and rectify the issue:
+            The pod name is nginx-phpfpm and configmap name is nginx-config. Identify and fix the problem.
+            Once resolved, copy /home/thor/index.php file from the jump host to the nginx-container within the nginx document root. After this, you should be able to access the website using Website button on the top bar.
+            Note: The kubectl utility on jump_host is configured to operate with the Kubernetes cluster.
+ # Solution:
+        thor@jumphost ~$ kubectl describe configmap nginx-config
+        Name:         nginx-config
+        Namespace:    default
+        Labels:       <none>
+        Annotations:  <none>
+
+        Data
+        ====
+        nginx.conf:
+        ----
+        events {
+        }
+        http {
+        server {
+            listen 8099 default_server;
+            listen [::]:8099 default_server;
+
+            # Set nginx to serve files from the shared volume!
+            root /var/www/html;
+            index  index.html index.htm index.php;
+            server_name _;
+            location / {
+            try_files $uri $uri/ =404;
+            }
+            location ~ \.php$ {
+            include fastcgi_params;
+            fastcgi_param REQUEST_METHOD $request_method;
+            fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+            fastcgi_pass 127.0.0.1:9000;
+            }
+        }
+        }
+
+
+        BinaryData
+        ====
+
+        Events:  <none>
+        thor@jumphost ~$ 
+        thor@jumphost ~$ 
+        thor@jumphost ~$ kubectl get pod nginx-phpfpm -o yaml
+        apiVersion: v1
+        kind: Pod
+        metadata:
+        annotations:
+            kubectl.kubernetes.io/last-applied-configuration: |
+            {"apiVersion":"v1","kind":"Pod","metadata":{"annotations":{},"labels":{"app":"php-app"},"name":"nginx-phpfpm","namespace":"default"},"spec":{"containers":[{"image":"php:7.2-fpm-alpine","name":"php-fpm-container","volumeMounts":[{"mountPath":"/var/www/html","name":"shared-files"}]},{"image":"nginx:latest","name":"nginx-container","volumeMounts":[{"mountPath":"/usr/share/nginx/html","name":"shared-files"},{"mountPath":"/etc/nginx/nginx.conf","name":"nginx-config-volume","subPath":"nginx.conf"}]}],"volumes":[{"emptyDir":{},"name":"shared-files"},{"configMap":{"name":"nginx-config"},"name":"nginx-config-volume"}]}}
+        creationTimestamp: "2026-02-16T13:05:10Z"
+        labels:
+            app: php-app
+        name: nginx-phpfpm
+        namespace: default
+        resourceVersion: "2094"
+        uid: 6dccd890-843a-4c19-bc86-2241609e651e
+        spec:
+        containers:
+        - image: php:7.2-fpm-alpine
+            imagePullPolicy: IfNotPresent
+            name: php-fpm-container
+            resources: {}
+            terminationMessagePath: /dev/termination-log
+            terminationMessagePolicy: File
+            volumeMounts:
+            - mountPath: /var/www/html
+            name: shared-files
+            - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+            name: kube-api-access-gzlfl
+            readOnly: true
+        - image: nginx:latest
+            imagePullPolicy: Always
+            name: nginx-container
+            resources: {}
+            terminationMessagePath: /dev/termination-log
+            terminationMessagePolicy: File
+            volumeMounts:
+            - mountPath: /usr/share/nginx/html
+            name: shared-files
+            - mountPath: /etc/nginx/nginx.conf
+            name: nginx-config-volume
+            subPath: nginx.conf
+            - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+            name: kube-api-access-gzlfl
+            readOnly: true
+        dnsPolicy: ClusterFirst
+        enableServiceLinks: true
+        nodeName: kodekloud-control-plane
+        preemptionPolicy: PreemptLowerPriority
+        priority: 0
+        restartPolicy: Always
+        schedulerName: default-scheduler
+        securityContext: {}
+        serviceAccount: default
+        serviceAccountName: default
+        terminationGracePeriodSeconds: 30
+        tolerations:
+        - effect: NoExecute
+            key: node.kubernetes.io/not-ready
+            operator: Exists
+            tolerationSeconds: 300
+        - effect: NoExecute
+            key: node.kubernetes.io/unreachable
+            operator: Exists
+            tolerationSeconds: 300
+        volumes:
+        - emptyDir: {}
+            name: shared-files
+        - configMap:
+            defaultMode: 420
+            name: nginx-config
+            name: nginx-config-volume
+        - name: kube-api-access-gzlfl
+            projected:
+            defaultMode: 420
+            sources:
+            - serviceAccountToken:
+                expirationSeconds: 3607
+                path: token
+            - configMap:
+                items:
+                - key: ca.crt
+                    path: ca.crt
+                name: kube-root-ca.crt
+            - downwardAPI:
+                items:
+                - fieldRef:
+                    apiVersion: v1
+                    fieldPath: metadata.namespace
+                    path: namespace
+        status:
+        conditions:
+        - lastProbeTime: null
+            lastTransitionTime: "2026-02-16T13:05:10Z"
+            status: "True"
+            type: Initialized
+        - lastProbeTime: null
+            lastTransitionTime: "2026-02-16T13:05:21Z"
+            status: "True"
+            type: Ready
+        - lastProbeTime: null
+            lastTransitionTime: "2026-02-16T13:05:21Z"
+            status: "True"
+            type: ContainersReady
+        - lastProbeTime: null
+            lastTransitionTime: "2026-02-16T13:05:10Z"
+            status: "True"
+            type: PodScheduled
+        containerStatuses:
+        - containerID: containerd://e120ba7fd3c3ccbb04e8abbe9daa6e116e53c39f6fc171ed714993cd96166b16
+            image: docker.io/library/nginx:latest
+            imageID: docker.io/library/nginx@sha256:341bf0f3ce6c5277d6002cf6e1fb0319fa4252add24ab6a0e262e0056d313208
+            lastState: {}
+            name: nginx-container
+            ready: true
+            restartCount: 0
+            started: true
+            state:
+            running:
+                startedAt: "2026-02-16T13:05:21Z"
+        - containerID: containerd://b202f154a8016f69f4f71c6f340d5b0ff5a518ceae04af6aaf8c19700122fa59
+            image: docker.io/library/php:7.2-fpm-alpine
+            imageID: docker.io/library/php@sha256:2e2d92415f3fc552e9a62548d1235f852c864fcdc94bcf2905805d92baefc87f
+            lastState: {}
+            name: php-fpm-container
+            ready: true
+            restartCount: 0
+            started: true
+            state:
+            running:
+                startedAt: "2026-02-16T13:05:14Z"
+        hostIP: 172.17.0.2
+        phase: Running
+        podIP: 10.244.0.5
+        podIPs:
+        - ip: 10.244.0.5
+        qosClass: BestEffort
+        startTime: "2026-02-16T13:05:10Z"
+        thor@jumphost ~$ kubectl get pod nginx-phpfpm -o yaml > nginx-phpfpm.yml
+        thor@jumphost ~$ ls
+        index.php  nginx-phpfpm.yml
+        thor@jumphost ~$ vi nginx-phpfpm.yml 
+        thor@jumphost ~$ kubectl delete pod nginx-phpfpm
+        pod "nginx-phpfpm" deleted
+        thor@jumphost ~$ kubectl apply -f nginx-phpfpm.yml
+        pod/nginx-phpfpm created
+        thor@jumphost ~$ kubectl get pods
+        NAME           READY   STATUS    RESTARTS   AGE
+        nginx-phpfpm   2/2     Running   0          8s
+        thor@jumphost ~$ kubectl cp index.php nginx-phpfpm:/var/www/html/index.php -c nginx-container
+        thor@jumphost ~$ 
+
+# Task 54: Kubernetes Shared Volumes
+ # Requirement:
+        We are working on an application that will be deployed on multiple containers within a pod on Kubernetes cluster. There is a requirement to share a volume among the containers to save some temporary data. The Nautilus DevOps team is developing a similar template to replicate the scenario. Below you can find more details about it.
+            Create a pod named volume-share-datacenter.
+            
+            For the first container, use image debian with latest tag only and remember to mention the tag i.e debian:latest, container should be named as volume-container-datacenter-1, and run a sleep command for it so that it remains in running state. Volume volume-share should be mounted at path /tmp/beta.
+            
+            For the second container, use image debian with the latest tag only and remember to mention the tag i.e debian:latest, container should be named as volume-container-datacenter-2, and again run a sleep command for it so that it remains in running state. Volume volume-share should be mounted at path /tmp/cluster.
+            
+            Volume name should be volume-share of type emptyDir.
+            
+            After creating the pod, exec into the first container i.e volume-container-datacenter-1, and just for testing create a file beta.txt with any content under the mounted path of first container i.e /tmp/beta.
+            
+            The file beta.txt should be present under the mounted path /tmp/cluster on the second container volume-container-datacenter-2 as well, since they are using a shared volume.
+            Note: The kubectl utility on jump_host has been configured to work with the kubernetes cluster.
+ # Solution:
+        Yaml manifest file for creating the shared volume with multi container in single pod
+        apiVersion: v1
+        kind: Pod
+        metadata:
+        name: volume-share-datacenter
+        spec:
+        volumes:
+            - name: volume-share
+            emptyDir: {}
+        containers:
+            - name: volume-container-datacenter-1
+            image: debian:latest
+            command: ["sh", "-c", "sleep 3600"]
+            volumeMounts:
+                - name: volume-share
+                mountPath: /tmp/beta
+            - name: volume-container-datacenter-2
+            image: debian:latest
+            command: ["sh", "-c", "sleep 3600"]
+            volumeMounts:
+                - name: volume-share
+                mountPath: /tmp/cluster
+
+        thor@jumphost ~$ kubectl apply -f volume-share.yaml 
+        pod/volume-share-datacenter created
+        thor@jumphost ~$ kubectl get pods
+        NAME                      READY   STATUS              RESTARTS   AGE
+        volume-share-datacenter   0/2     ContainerCreating   0          6s
+        thor@jumphost ~$ kubectl get pods
+        NAME                      READY   STATUS    RESTARTS   AGE
+        volume-share-datacenter   2/2     Running   0          11s
+
+        thor@jumphost ~$ kubectl apply -f volume-share.yaml  ## Pod created 
+        pod/volume-share-datacenter created
+        thor@jumphost ~$ kubectl get pods
+        NAME                      READY   STATUS              RESTARTS   AGE
+        volume-share-datacenter   0/2     ContainerCreating   0          6s
+        thor@jumphost ~$ kubectl get pods
+        NAME                      READY   STATUS    RESTARTS   AGE
+        volume-share-datacenter   2/2     Running   0          11s
+        thor@jumphost ~$ kubectl describe pod volume-share-datacenter ## Verify container names in side the POD
+        Name:             volume-share-datacenter
+        Namespace:        default
+        Priority:         0
+        Service Account:  default
+        Node:             kodekloud-control-plane/172.17.0.2
+        Start Time:       Tue, 17 Feb 2026 10:57:39 +0000
+        Labels:           <none>
+        Annotations:      <none>
+        Status:           Running
+        IP:               10.244.0.5
+        IPs:
+        IP:  10.244.0.5
+        Containers:
+        volume-container-datacenter-1:
+            Container ID:  containerd://6008182ccd02cffc9012de695cc9677d6e7bfa3c32b06c8ac1dd32d0fbb474ed
+            Image:         debian:latest
+            Image ID:      docker.io/library/debian@sha256:2c91e484d93f0830a7e05a2b9d92a7b102be7cab562198b984a84fdbc7806d91
+            Port:          <none>
+            Host Port:     <none>
+            Command:
+            sh
+            -c
+            sleep 3600
+            State:          Running
+            Started:      Tue, 17 Feb 2026 10:57:47 +0000
+            Ready:          True
+            Restart Count:  0
+            Environment:    <none>
+            Mounts:
+            /tmp/beta from volume-share (rw)
+            /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-hhcc9 (ro)
+        volume-container-datacenter-2:
+            Container ID:  containerd://22354e6b99fa21013353dd45f652c6fccdcdfa83864d02cc9058c0d60ad4ddf2
+            Image:         debian:latest
+            Image ID:      docker.io/library/debian@sha256:2c91e484d93f0830a7e05a2b9d92a7b102be7cab562198b984a84fdbc7806d91
+            Port:          <none>
+            Host Port:     <none>
+            Command:
+            sh
+            -c
+            sleep 3600
+            State:          Running
+            Started:      Tue, 17 Feb 2026 10:57:47 +0000
+            Ready:          True
+            Restart Count:  0
+            Environment:    <none>
+            Mounts:
+            /tmp/cluster from volume-share (rw)
+            /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-hhcc9 (ro)
+        Conditions:
+        Type              Status
+        Initialized       True 
+        Ready             True 
+        ContainersReady   True 
+        PodScheduled      True 
+        Volumes:
+        volume-share:
+            Type:       EmptyDir (a temporary directory that shares a pod's lifetime)
+            Medium:     
+            SizeLimit:  <unset>
+        kube-api-access-hhcc9:
+            Type:                    Projected (a volume that contains injected data from multiple sources)
+            TokenExpirationSeconds:  3607
+            ConfigMapName:           kube-root-ca.crt
+            ConfigMapOptional:       <nil>
+            DownwardAPI:             true
+        QoS Class:                   BestEffort
+        Node-Selectors:              <none>
+        Tolerations:                 node.kubernetes.io/not-ready:NoExecute op=Exists for 300s
+                                    node.kubernetes.io/unreachable:NoExecute op=Exists for 300s
+        Events:
+        Type    Reason     Age   From               Message
+        ----    ------     ----  ----               -------
+        Normal  Scheduled  79s   default-scheduler  Successfully assigned default/volume-share-datacenter to kodekloud-control-plane
+        Normal  Pulling    76s   kubelet            Pulling image "debian:latest"
+        Normal  Pulled     71s   kubelet            Successfully pulled image "debian:latest" in 4.526567874s (4.526588432s including waiting)
+        Normal  Created    71s   kubelet            Created container volume-container-datacenter-1
+        Normal  Started    71s   kubelet            Started container volume-container-datacenter-1
+        Normal  Pulling    71s   kubelet            Pulling image "debian:latest"
+        Normal  Pulled     71s   kubelet            Successfully pulled image "debian:latest" in 244.405638ms (244.419273ms including waiting)
+        Normal  Created    71s   kubelet            Created container volume-container-datacenter-2
+        Normal  Started    71s   kubelet            Started container volume-container-datacenter-2
+        thor@jumphost ~$ kubectl exec -it volume-share-datacenter -c volume-container-datacenter-1 -- /bin/bash ## Connect to the container in the POD
+        root@volume-share-datacenter:/# pwd
+        /
+        root@volume-share-datacenter:/# cd /tmp/beta/
+        root@volume-share-datacenter:/tmp/beta# ls
+        root@volume-share-datacenter:/tmp/beta# vi beta.txt
+        bash: vi: command not found
+        root@volume-share-datacenter:/tmp/beta# vim beta.txt
+        bash: vim: command not found
+        root@volume-share-datacenter:/tmp/beta# touch beta.txt
+        root@volume-share-datacenter:/tmp/beta# echo testing shared volumes in multi container >> beta.txt ## Created the test file in container 1
+        root@volume-share-datacenter:/tmp/beta# cat beta.txt 
+        testing shared volumes in multi container
+        root@volume-share-datacenter:/tmp/beta# 
+        ## Validating in container 2 whether the test file showing in Conteiner 2
+
+        thor@jumphost ~$ kubectl exec -it volume-share-datacenter -c volume-container-datacenter-2 -- /bin/bash ## Connecting to COntainer 2
+        root@volume-share-datacenter:/# cd /tmp/cluster/
+        root@volume-share-datacenter:/tmp/cluster# ls
+        beta.txt
+        root@volume-share-datacenter:/tmp/cluster# cat beta.txt 
+        testing shared volumes in multi container
+        root@volume-share-datacenter:/tmp/cluster#
+
+# Task 55: Kubernetes Sidecar Containers 
+ # Requirement:
+        We have a web server container running the nginx image. The access and error logs generated by the web server are not critical enough to be placed on a persistent volume. However, Nautilus developers need access to the last 24 hours of logs so that they can trace issues and bugs. Therefore, we need to ship the access and error logs for the web server to a log-aggregation service. Following the separation of concerns principle, we implement the Sidecar pattern by deploying a second container that ships the error and access logs from nginx. Nginx does one thing, and it does it well—serving web pages. The second container also specializes in its task—shipping logs. Since containers are running on the same Pod, we can use a shared emptyDir volume to read and write logs.
+
+        Create a pod named webserver.
+
+        Create an emptyDir volume shared-logs.
+
+        Create two containers from nginx and ubuntu images with latest tag only and remember to mention tag i.e nginx:latest, nginx container name should be nginx-container and ubuntu container name should be sidecar-container on webserver pod.
+
+        Add command on sidecar-container "sh","-c","while true; do cat /var/log/nginx/access.log /var/log/nginx/error.log; sleep 30; done"
+
+        Mount the volume shared-logs on both containers at location /var/log/nginx, all containers should be up and running.
+
+        Note: The kubectl utility on jump_host has been configured to work with the kubernetes cluster.
+ # Solution:
+        apiVersion: v1
+        kind: Pod
+        metadata:
+        name: webserver
+        spec:
+        volumes:
+            - name: shared-logs
+            emptyDir: {}
+        containers:
+            - name: nginx-container
+            image: nginx:latest
+            volumeMounts:
+                - name: shared-logs
+                mountPath: /var/log/nginx
+            resources:
+                requests:
+                memory: "20Mi"
+                cpu: "100m"
+                limits:
+                memory: "25Mi"
+                cpu: "100m"
+            - name: sidecar-container
+            image: ubuntu:latest
+            command: ["sh","-c","while true; do cat /var/log/nginx/access.log /var/log/nginx/error.log; sleep 30; done"]
+            volumeMounts:
+                - mountPath: /var/log/nginx
+                name: shared-logs
+            resources:
+                requests:
+                memory: "20Mi"
+                cpu: "100m"
+                limits:
+                memory: "25Mi"
+                cpu: "100m"
+# Task 56: Deploy Nginx Web Server on Kubernetes Cluster
+ # Requirement:
+        Some of the Nautilus team developers are developing a static website and they want to deploy it on Kubernetes cluster. They want it to be highly available and scalable. Therefore, based on the requirements, the DevOps team has decided to create a deployment for it with multiple replicas. Below you can find more details about it:
+
+            Create a deployment using nginx image with latest tag only and remember to mention the tag i.e nginx:latest. Name it as nginx-deployment. The container should be named as nginx-container, also make sure replica counts are 3.
+
+            Create a NodePort type service named nginx-service. The nodePort should be 30011.
+
+            Note: The kubectl utility on jump_host has been configured to work with the kubernetes cluster.          
+
+ # Solution: 
+        # Create the Deployment and service manigfest file
+            # Deployment manifest file:
+
+            #######################################
+            # Create a deployment using nginx image with latest tag only and remember to mention the tag i.e nginx:latest. Name it as nginx-deployment. 
+            # The container should be named as nginx-container, also make sure replica counts are 3.
+            ############################################
+            apiVersion: apps/v1
+            kind: Deployment
+            metadata:
+            name: nginx-deployment
+            spec:
+            replicas: 3
+            selector:
+                matchLabels:
+                name: nginx  
+            template:
+                metadata:
+                labels:
+                    name: nginx
+                spec:
+                containers:
+                    - name: nginx-container
+                    image: nginx:latest
+                    ports:
+                        - containerPort: 80
+        
+        # Service Manifest file
+            ###################################################################################
+            # Create a NodePort type service named nginx-service. The nodePort should be 30011.
+            ###################################################################################
+            apiVersion: v1
+            kind: Service
+            metadata:
+            name: nginx-service
+            spec:
+            ports:
+                - port: 80
+                targetPort: 80
+                nodePort: 30011
+            selector:
+                name: nginx
+            type: NodePort
+
+
+
+
+
 
 
