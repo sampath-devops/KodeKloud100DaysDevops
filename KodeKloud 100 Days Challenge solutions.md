@@ -2590,6 +2590,218 @@ Linux Commands
                 name: nginx
             type: NodePort
 
+# Task 57: Print Environment Variables
+  # Requirement:
+        The Nautilus DevOps team is working on to setup some pre-requisites for an application that will send the greetings to different users. There is a sample deployment, that needs to be tested. Below is a scenario which needs to be configured on Kubernetes cluster. Please find below more details about it.
+
+            Create a pod named print-envars-greeting.
+
+            Configure spec as, the container name should be print-env-container and use bash image.
+
+            Create three environment variables:
+
+            a. GREETING and its value should be Welcome to
+
+            b. COMPANY and its value should be Stratos
+
+            c. GROUP and its value should be Industries
+
+            Use command ["/bin/sh", "-c", 'echo "$(GREETING) $(COMPANY) $(GROUP)"'] (please use this exact command), also set its restartPolicy policy to Never to avoid crash loop back.
+
+            You can check the output using kubectl logs -f print-envars-greeting command.
+
+
+            Note: The kubectl utility on jump_host has been configured to work with the kubernetes cluster.
+  # Solution: 
+        Pod Manifest file created using Conifg maps concept
+            apiVersion: v1
+            kind: Pod
+            metadata: 
+            name: print-envars-greeting
+            spec:
+            containers:
+                - name: print-env-container
+                image: bash
+                command: ["/bin/sh", "-c", 'echo "$(GREETING) $(COMPANY) $(GROUP)"'] 
+                env:
+                    - name: GREETING 
+                    value: "Welcome to"
+                    - name: COMPANY
+                    value: "Stratos"
+                    - name: GROUP
+                    value: "Industries"
+            restartPolicy: Never
+    
+        thor@jumphost ~$ kubectl apply -f print-env.yaml 
+        pod/print-envars-greeting created
+        thor@jumphost ~$ kubectl get pods
+        NAME                    READY   STATUS      RESTARTS   AGE
+        print-envars-greeting   0/1     Completed   0          13s
+        thor@jumphost ~$ kubectl get pods
+        NAME                    READY   STATUS      RESTARTS   AGE
+        print-envars-greeting   0/1     Completed   0          16s
+        thor@jumphost ~$ kubectl get pods
+        NAME                    READY   STATUS      RESTARTS   AGE
+        print-envars-greeting   0/1     Completed   0          17s
+        thor@jumphost ~$ kubectl get pods
+        NAME                    READY   STATUS      RESTARTS   AGE
+        print-envars-greeting   0/1     Completed   0          19s
+        thor@jumphost ~$ kubectl describe pod print-envars-greeting
+        Name:             print-envars-greeting
+        Namespace:        default
+        Priority:         0
+        Service Account:  default
+        Node:             kodekloud-control-plane/172.17.0.2
+        Start Time:       Fri, 20 Feb 2026 09:44:21 +0000
+        Labels:           <none>
+        Annotations:      <none>
+        Status:           Succeeded
+        IP:               10.244.0.5
+        IPs:
+        IP:  10.244.0.5
+        Containers:
+        print-env-container:
+            Container ID:  containerd://82bd9706bda7eb61fdfd8457c4bdb3d3f8a879f8b4ebab2627b18a75436509a8
+            Image:         bash
+            Image ID:      docker.io/library/bash@sha256:e320b40b14abc61f053286705070342c46034a549a276b798e64541457c4af92
+            Port:          <none>
+            Host Port:     <none>
+            Command:
+            /bin/sh
+            -c
+            echo "$(GREETING) $(COMPANY) $(GROUP)"
+            State:          Terminated
+            Reason:       Completed
+            Exit Code:    0
+            Started:      Fri, 20 Feb 2026 09:44:23 +0000
+            Finished:     Fri, 20 Feb 2026 09:44:23 +0000
+            Ready:          False
+            Restart Count:  0
+            Environment:
+            GREETING:  Welcome to
+            COMPANY:   Stratos
+            GROUP:     Industries
+            Mounts:
+            /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-59dsm (ro)
+        Conditions:
+        Type              Status
+        Initialized       True 
+        Ready             False 
+        ContainersReady   False 
+        PodScheduled      True 
+        Volumes:
+        kube-api-access-59dsm:
+            Type:                    Projected (a volume that contains injected data from multiple sources)
+            TokenExpirationSeconds:  3607
+            ConfigMapName:           kube-root-ca.crt
+            ConfigMapOptional:       <nil>
+            DownwardAPI:             true
+        QoS Class:                   BestEffort
+        Node-Selectors:              <none>
+        Tolerations:                 node.kubernetes.io/not-ready:NoExecute op=Exists for 300s
+                                    node.kubernetes.io/unreachable:NoExecute op=Exists for 300s
+        Events:
+        Type    Reason     Age   From               Message
+        ----    ------     ----  ----               -------
+        Normal  Scheduled  48s   default-scheduler  Successfully assigned default/print-envars-greeting to kodekloud-control-plane
+        Normal  Pulling    47s   kubelet            Pulling image "bash"
+        Normal  Pulled     46s   kubelet            Successfully pulled image "bash" in 849.100688ms (849.115945ms including waiting)
+        Normal  Created    46s   kubelet            Created container print-env-container
+        Normal  Started    46s   kubelet            Started container print-env-container
+        thor@jumphost ~$ kubectl logs -f print-envars-greeting
+        Welcome to Stratos Industries
+        thor@jumphost ~$
+
+# Task 58: Deploy Grafana on Kubernetes Cluster
+  # Requirement:
+        The Nautilus DevOps teams is planning to set up a Grafana tool to collect and analyze analytics from some applications. They are planning to deploy it on Kubernetes cluster. Below you can find more details.
+            1.) Create a deployment named grafana-deployment-datacenter using any grafana image for Grafana app. Set other parameters as per your choice.
+
+            2.) Create NodePort type service with nodePort 32000 to expose the app.
+
+        You need not to make any configuration changes inside the Grafana app once deployed, just make sure you are able to access the Grafana login page.
+        Note: The kubectl on jump_host has been configured to work with kubernetes cluster.
+  # Solution:
+        ###############################################################################
+        # The Nautilus DevOps teams is planning to set up a Grafana tool to collect and analyze analytics from some applications. 
+        # They are planning to deploy it on Kubernetes cluster. Below you can find more details.
+        #    1.) Create a deployment named grafana-deployment-datacenter using any grafana image for Grafana app. Set other parameters as per your choice.
+        #    2.) Create NodePort type service with nodePort 32000 to expose the app.
+        #    You need not to make any configuration changes inside the Grafana app once deployed, just make sure you are able to access the Grafana login page.
+        #    Note: The kubectl on jump_host has been configured to work with kubernetes cluster.
+        ################################################################################
+
+        apiVersion: apps/v1
+        kind: Deployment
+        metadata:
+        name: grafana-deployment-datacenter
+        spec:
+        replicas: 2
+        selector:
+            matchLabels:
+            name: grafana-deployment   
+        template:
+            metadata:
+            labels:
+                name: grafana-deployment
+            spec:
+            containers:
+                - name: grafana
+                  image: grafana/grafana:latest 
+                  ports:
+                    - containerPort: 3000
+                    
+        ---
+        ####################
+        # Creating the node port service
+        apiVersion: v1
+        kind: Service
+        metadata:
+        name: grafana-port-node
+        spec:
+        type: NodePort
+        selector:
+            name: grafana-deployment
+        ports:
+            - port: 3000
+              targetPort: 3000
+              nodePort: 32000  
+
+        thor@jumphost ~$ kubectl apply -f grafana-deployment.yaml 
+        deployment.apps/grafana-deployment-datacenter created
+        service/grafana-port-node created
+        thor@jumphost ~$ kubectl get svc
+        NAME                TYPE        CLUSTER-IP     EXTERNAL-IP   PORT(S)          AGE
+        grafana-port-node   NodePort    10.96.235.11   <none>        3000:32000/TCP   9s
+        kubernetes          ClusterIP   10.96.0.1      <none>        443/TCP          25m
+        thor@jumphost ~$ kubectl get pods
+        NAME                                            READY   STATUS              RESTARTS   AGE
+        grafana-deployment-datacenter-6b99f6657-5lw9w   0/1     ContainerCreating   0          23s
+        grafana-deployment-datacenter-6b99f6657-79p5z   0/1     ContainerCreating   0          23s
+        thor@jumphost ~$ kubectl get pods
+        NAME                                            READY   STATUS    RESTARTS   AGE
+        grafana-deployment-datacenter-6b99f6657-5lw9w   1/1     Running   0          27s
+        grafana-deployment-datacenter-6b99f6657-79p5z   1/1     Running   0          27s
+        thor@jumphost ~$ kubectl get pods
+        NAME                                            READY   STATUS    RESTARTS   AGE
+        grafana-deployment-datacenter-6b99f6657-5lw9w   1/1     Running   0          29s
+        grafana-deployment-datacenter-6b99f6657-79p5z   1/1     Running   0          29s
+        thor@jumphost ~$ kubectl get rs
+        NAME                                      DESIRED   CURRENT   READY   AGE
+        grafana-deployment-datacenter-6b99f6657   2         2         2       33s
+        thor@jumphost ~$ kubectl get deployment
+        NAME                            READY   UP-TO-DATE   AVAILABLE   AGE
+        grafana-deployment-datacenter   2/2     2            2           41s
+        thor@jumphost ~$ 
+
+# Task 59: Troubleshoot Deployment issues in Kubernetes
+  # Requirement:
+        Last week, the Nautilus DevOps team deployed a redis app on Kubernetes cluster, which was working fine so far. This morning one of the team members was making some changes in this existing setup, but he made some mistakes and the app went down. We need to fix this as soon as possible. Please take a look.
+            The deployment name is redis-deployment. The pods are not in running state right now, so please look into the issue and fix the same.
+            Note: The kubectl utility on jump_host has been configured to work with the kubernetes cluster.
+  # Solution:
+        Deployment having issues with Image name & Configmap names so edited deployment accrordingly
+    
 
 
 
