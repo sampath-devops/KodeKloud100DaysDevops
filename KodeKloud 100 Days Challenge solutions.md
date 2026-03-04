@@ -2963,6 +2963,414 @@ Linux Commands
         5ecur3
         [root@secret-nautilus /]# cat /opt/apps/blog.txt 
 
+# Task 63: Deploy Iron Gallery App on Kubernetes
+  # Requirement:
+        There is an iron gallery app that the Nautilus DevOps team was developing. They have recently customized the app and are going to deploy the same on the Kubernetes cluster. Below you can find more details:
+
+            Create a namespace iron-namespace-devops
+
+            Create a deployment iron-gallery-deployment-devops for iron gallery under the same namespace you created.
+
+            :- Labels run should be iron-gallery.
+
+            :- Replicas count should be 1.
+
+            :- Selector's matchLabels run should be iron-gallery.
+
+            :- Template labels run should be iron-gallery under metadata.
+
+            :- The container should be named as iron-gallery-container-devops, use kodekloud/irongallery:2.0 image ( use exact image name / tag ).
+
+            :- Resources limits for memory should be 100Mi and for CPU should be 50m.
+
+            :- First volumeMount name should be config, its mountPath should be /usr/share/nginx/html/data.
+
+            :- Second volumeMount name should be images, its mountPath should be /usr/share/nginx/html/uploads.
+
+            :- First volume name should be config and give it emptyDir and second volume name should be images, also give it emptyDir.
+
+            Create a deployment iron-db-deployment-devops for iron db under the same namespace.
+
+            :- Labels db should be mariadb.
+
+            :- Replicas count should be 1.
+
+            :- Selector's matchLabels db should be mariadb.
+
+            :- Template labels db should be mariadb under metadata.
+
+            :- The container name should be iron-db-container-devops, use kodekloud/irondb:2.0 image ( use exact image name / tag ).
+
+            :- Define environment, set MYSQL_DATABASE its value should be database_apache, set MYSQL_ROOT_PASSWORD and MYSQL_PASSWORD value should be with some complex passwords for DB connections, and MYSQL_USER value should be any custom user ( except root ).
+
+            :- Volume mount name should be db and its mountPath should be /var/lib/mysql. Volume name should be db and give it an emptyDir.
+
+            Create a service for iron db which should be named iron-db-service-devops under the same namespace. Configure spec as selector's db should be mariadb. Protocol should be TCP, port and targetPort should be 3306 and its type should be ClusterIP.
+
+            Create a service for iron gallery which should be named iron-gallery-service-devops under the same namespace. Configure spec as selector's run should be iron-gallery. Protocol should be TCP, port and targetPort should be 80, nodePort should be 32678 and its type should be NodePort.
+
+
+            Note:
+
+
+            We don't need to make connection b/w database and front-end now, if the installation page is coming up it should be enough for now.
+
+            The kubectl on jump_host has been configured to work with the kubernetes cluster.
+
+  # Solution:
+        Manifest file Deployment and service
+
+        apiVersion: apps/v1
+        kind: Deployment
+        metadata:
+        name: iron-gallery-deployment-devops
+        namespace: iron-namespace-devops
+        labels:
+            run: iron-gallery
+        spec:
+        replicas: 1
+        selector:
+            matchLabels:
+            run: iron-gallery
+        template:
+            metadata:
+            labels:
+                run: iron-gallery
+            spec:
+            containers:
+            - name: iron-gallery-container-devops
+                image: kodekloud/irongallery:2.0
+                resources:
+                limits:
+                    memory: "100Mi"
+                    cpu: "50m"
+                volumeMounts:
+                - name: config
+                    mountPath: /usr/share/nginx/html/data
+                - name: images
+                    mountPath: /usr/share/nginx/html/uploads 
+            volumes:
+                - name: config
+                emptyDir: {}
+                - name: images
+                emptyDir: {}
+
+        ---
+        apiVersion: apps/v1
+        kind: Deployment
+        metadata:
+        name: iron-db-deployment-devops
+        namespace: iron-namespace-devops
+        labels:
+            db: mariadb
+        spec: 
+        replicas: 1
+        selector:
+            matchLabels:
+            db: mariadb
+        template:
+            metadata:
+            labels:
+                db: mariadb
+            spec:
+            containers:
+                - name: iron-db-container-devops
+                image: kodekloud/irondb:2.0
+                env:
+                    - name: MYSQL_DATABASE
+                    value: database_host
+                    - name: MYSQL_ROOT_PASSWORD
+                    value: "RootP@ssw0rd!"
+                    - name: MYSQL_USER
+                    value: "ironuser"
+                    - name: MYSQL_PASSWORD
+                    value: "IronP@ss123"
+                volumeMounts:
+                    - mountPath: /var/lib/mysql
+                    name: db
+            volumes:
+                - name: db
+                emptyDir: {}
+
+        ---
+        apiVersion: v1
+        kind: Service
+        metadata:
+        name: iron-db-service-devops
+        namespace: iron-namespace-devops
+        spec:
+        selector:
+            db: mariadb
+        ports:
+            - protocol: TCP
+            port: 3306
+            targetPort: 3306
+        type: ClusterIP
+
+        ---
+
+        apiVersion: v1
+        kind: Service
+        metadata:
+        name: iron-gallery-service-devops
+        namespace: iron-namespace-devops
+        spec:
+        selector:
+            run: iron-gallery
+        ports:
+            - protocol: TCP
+            port: 80
+            targetPort: 80
+            nodePort: 32678
+        type: NodePort
+
+# Task 64: Fix Python App Deployed on Kubernetes Cluster
+  # Requirement:
+        One of the DevOps engineers was trying to deploy a python app on Kubernetes cluster. Unfortunately, due to some mis-configuration, the application is not coming up. Please take a look into it and fix the issues. Application should be accessible on the specified nodePort.
+
+            The deployment name is python-deployment-xfusion, its using poroko/flask-demo-appimage. The deployment and service of this app is already deployed.
+
+            nodePort should be 32345 and targetPort should be python flask app's default port.
+
+            Note: The kubectl on jump_host has been configured to work with the kubernetes cluster.
+
+  # Solution:
+
+        Issue- 1 : We can see POD creation is failed with below error and found that in deployment image name wrongly updated
+        thor@jumphost ~$ kubectl get deployment
+        NAME                        READY   UP-TO-DATE   AVAILABLE   AGE
+        python-deployment-xfusion   0/1     1            0           5m43s
+        thor@jumphost ~$ kubectl edit python-deployment-xfusion
+        error: the server doesn't have a resource type "python-deployment-xfusion"
+        thor@jumphost ~$ kubectl edit deployment python-deployment-xfusion
+        Edit cancelled, no changes made.
+        thor@jumphost ~$ kubectl get pods
+        NAME                                         READY   STATUS             RESTARTS   AGE
+        python-deployment-xfusion-5dcd4fff84-vhptx   0/1     ImagePullBackOff   0          13m
+        thor@jumphost ~$ kubectl logs python-deployment-xfusion-5dcd4fff84-vhptx 
+        Error from server (BadRequest): container "python-container-xfusion" in pod "python-deployment-xfusion-5dcd4fff84-vhptx" is waiting to start: trying and failing to pull image
+        thor@jumphost ~$ 
+        # So updated the correct image name in deployment file and deployement deployed the POD as expected
+
+        thor@jumphost ~$ kubectl edit deployment python-deployment-xfusion
+        deployment.apps/python-deployment-xfusion edited
+        thor@jumphost ~$ kubectl get deployment
+        NAME                        READY   UP-TO-DATE   AVAILABLE   AGE
+        python-deployment-xfusion   0/1     1            0           14m
+        thor@jumphost ~$ kubectl get deployment
+        NAME                        READY   UP-TO-DATE   AVAILABLE   AGE
+        python-deployment-xfusion   0/1     1            0           14m
+        thor@jumphost ~$ kubectl get pods
+        NAME                                         READY   STATUS    RESTARTS   AGE
+        python-deployment-xfusion-74f98d699b-vm7r9   1/1     Running   0          17s
+        thor@jumphost ~$ kubectl get deployment
+        NAME                        READY   UP-TO-DATE   AVAILABLE   AGE
+        python-deployment-xfusion   1/1     1            1           14m
+        thor@jumphost ~$ kubectl get pods
+        NAME                                         READY   STATUS    RESTARTS   AGE
+        python-deployment-xfusion-74f98d699b-vm7r9   1/1     Running   0          23s
+        thor@jumphost ~$ 
+        
+        Issue -2: Having issue in service port and target port is not configured with python flask default port
+        thor@jumphost ~$ kubectl get svc
+        NAME                     TYPE        CLUSTER-IP     EXTERNAL-IP   PORT(S)          AGE
+        kubernetes               ClusterIP   10.96.0.1      <none>        443/TCP          5m24s
+        python-service-xfusion   NodePort    10.96.172.67   <none>        8080:32345/TCP   75s
+         # So updated the port and target port to 5000 in service 
+
+        thor@jumphost ~$ kubectl edit svc python-service-xfusion
+        service/python-service-xfusion edited
+        thor@jumphost ~$ kubectl get svc
+        NAME                     TYPE        CLUSTER-IP     EXTERNAL-IP   PORT(S)          AGE
+        kubernetes               ClusterIP   10.96.0.1      <none>        443/TCP          11m
+        python-service-xfusion   NodePort    10.96.172.67   <none>        5000:32345/TCP   7m18s
+
+# Task 65: Deploy Redis Deployment on Kubernetes
+ # Requirement:
+        The Nautilus application development team observed some performance issues with one of the application that is deployed in Kubernetes cluster. After looking into number of factors, the team has suggested to use some in-memory caching utility for DB service. After number of discussions, they have decided to use Redis. Initially they would like to deploy Redis on kubernetes cluster for testing and later they will move it to production. Please find below more details about the task:
+        Create a redis deployment with following parameters:
+
+        Create a config map called my-redis-config having maxmemory 2mb in redis-config.
+
+        Name of the deployment should be redis-deployment, it should use
+        redis:alpine image and container name should be redis-container. Also make sure it has only 1 replica.
+
+        The container should request for 1 CPU.
+        Mount 2 volumes:
+        a. An Empty directory volume called data at path /redis-master-data.
+
+        b. A configmap volume called redis-config at path /redis-master.
+
+        c. The container should expose the port 6379.
+
+        Finally, redis-deployment should be in an up and running state.
+        Note: The kubectl utility on jump_host has been configured to work with the kubernetes cluster.
+
+
+  # Solution:
+
+        # Manifest file for ConfigMap creation
+            apiVersion: v1
+            kind: ConfigMap
+            metadata:
+            name: my-redis-config
+            data:
+            redis.conf: |
+                maxmemory 2mb
+
+
+        # Manifest file for redis deployment
+
+            apiVersion: apps/v1
+            kind: Deployment
+            metadata:
+            name: redis-deployment
+            labels:
+                app: redis
+            spec:
+            replicas: 1
+            selector:
+                matchLabels:
+                app: redis
+            template:
+                metadata:
+                labels:
+                    app: redis
+                spec:
+                containers:
+                    - name: redis-container
+                    image: redis:alpine
+                    ports:
+                        - containerPort: 6379
+                    resources:
+                        requests:
+                            cpu: "1"                
+                    volumeMounts:
+                        - name: data
+                        mountPath: /redis-master-data
+                        - name: redis-config
+                        mountPath: /redis-master
+                volumes:
+                    - name: data
+                    emptyDir: {}
+                    - name: redis-config
+                    configMap:
+                        name: my-redis-config
+       
+
+        # applying the Manifest file and outcome are below 
+
+        thor@jumphost ~$ kubectl apply -f redis-configmap.yaml 
+        configmap/my-redis-config created
+        thor@jumphost ~$ kubectl get configmaps
+        NAME               DATA   AGE
+        kube-root-ca.crt   1      12m
+        my-redis-config    1      8s
+        thor@jumphost ~$ kubectl describe configmap my-redis-config
+        Name:         my-redis-config
+        Namespace:    default
+        Labels:       <none>
+        Annotations:  <none>
+
+        Data
+        ====
+        redis.conf:
+        ----
+        maxmemory 2mb
+
+
+        BinaryData
+        ====
+
+        Events:  <none>
+        thor@jumphost ~$ vi redis-deployment.yaml
+        thor@jumphost ~$ kubectl apply -f redis-deployment.yaml 
+        deployment.apps/redis-deployment created
+        thor@jumphost ~$ kubectl get deployment
+        NAME               READY   UP-TO-DATE   AVAILABLE   AGE
+        redis-deployment   1/1     1            1           6s
+        thor@jumphost ~$ kubectl get pods -A
+        NAMESPACE            NAME                                              READY   STATUS    RESTARTS   AGE
+        default              redis-deployment-68fbd4467-mj485                  1/1     Running   0          13s
+        kube-system          coredns-5d78c9869d-brb62                          1/1     Running   0          13m
+        kube-system          coredns-5d78c9869d-dnn5n                          1/1     Running   0          13m
+        kube-system          etcd-kodekloud-control-plane                      1/1     Running   0          14m
+        kube-system          kindnet-66dnn                                     1/1     Running   0          13m
+        kube-system          kube-apiserver-kodekloud-control-plane            1/1     Running   0          14m
+        kube-system          kube-controller-manager-kodekloud-control-plane   1/1     Running   0          14m
+        kube-system          kube-proxy-k7x74                                  1/1     Running   0          13m
+        kube-system          kube-scheduler-kodekloud-control-plane            1/1     Running   0          14m
+        local-path-storage   local-path-provisioner-6bc4bddd6b-chzll           1/1     Running   0          13m
+        thor@jumphost ~$ kubectl describe pod redis-deployment-68fbd4467-mj485
+        Name:             redis-deployment-68fbd4467-mj485
+        Namespace:        default
+        Priority:         0
+        Service Account:  default
+        Node:             kodekloud-control-plane/172.17.0.2
+        Start Time:       Wed, 04 Mar 2026 10:36:21 +0000
+        Labels:           app=redis
+                        pod-template-hash=68fbd4467
+        Annotations:      <none>
+        Status:           Running
+        IP:               10.244.0.5
+        IPs:
+        IP:           10.244.0.5
+        Controlled By:  ReplicaSet/redis-deployment-68fbd4467
+        Containers:
+        redis-container:
+            Container ID:   containerd://e72299709e14fbe7ae0875838276652adc017b17c108f59635a856b4f1570cba
+            Image:          redis:alpine
+            Image ID:       docker.io/library/redis@sha256:2afba59292f25f5d1af200496db41bea2c6c816b059f57ae74703a50a03a27d0
+            Port:           6379/TCP
+            Host Port:      0/TCP
+            State:          Running
+            Started:      Wed, 04 Mar 2026 10:36:26 +0000
+            Ready:          True
+            Restart Count:  0
+            Requests:
+            cpu:        1
+            Environment:  <none>
+            Mounts:
+            /redis-master from redis-config (rw)
+            /redis-master-data from data (rw)
+            /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-pmntq (ro)
+        Conditions:
+        Type              Status
+        Initialized       True 
+        Ready             True 
+        ContainersReady   True 
+        PodScheduled      True 
+        Volumes:
+        data:
+            Type:       EmptyDir (a temporary directory that shares a pod's lifetime)
+            Medium:     
+            SizeLimit:  <unset>
+        redis-config:
+            Type:      ConfigMap (a volume populated by a ConfigMap)
+            Name:      my-redis-config
+            Optional:  false
+        kube-api-access-pmntq:
+            Type:                    Projected (a volume that contains injected data from multiple sources)
+            TokenExpirationSeconds:  3607
+            ConfigMapName:           kube-root-ca.crt
+            ConfigMapOptional:       <nil>
+            DownwardAPI:             true
+        QoS Class:                   Burstable
+        Node-Selectors:              <none>
+        Tolerations:                 node.kubernetes.io/not-ready:NoExecute op=Exists for 300s
+                                    node.kubernetes.io/unreachable:NoExecute op=Exists for 300s
+        Events:
+        Type    Reason     Age   From               Message
+        ----    ------     ----  ----               -------
+        Normal  Scheduled  36s   default-scheduler  Successfully assigned default/redis-deployment-68fbd4467-mj485 to kodekloud-control-plane
+        Normal  Pulling    35s   kubelet            Pulling image "redis:alpine"
+        Normal  Pulled     32s   kubelet            Successfully pulled image "redis:alpine" in 3.260561214s (3.260577577s including waiting)
+        Normal  Created    32s   kubelet            Created container redis-container
+        Normal  Started    31s   kubelet            Started container redis-container
+        thor@jumphost ~$ _
+  
+                    
+
 
 
 
