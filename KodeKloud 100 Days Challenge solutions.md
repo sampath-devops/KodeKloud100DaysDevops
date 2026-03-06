@@ -3372,6 +3372,287 @@ Linux Commands
                     
 
 
+# Task 67: Deploy Guest Book App on Kubernetes
+ # Requirement:
+        The Nautilus Application development team has finished development of one of the applications and it is ready for deployment. It is a guestbook application that will be used to manage entries for guests/visitors. As per discussion with the DevOps team, they have finalized the infrastructure that will be deployed on Kubernetes cluster. Below you can find more details about it.
 
 
+        BACK-END TIER
+
+        Create a deployment named redis-master for Redis master.
+
+        a.) Replicas count should be 1.
+
+        b.) Container name should be master-redis-nautilus and it should use image redis.
+
+        c.) Request resources as CPU should be 100m and Memory should be 100Mi.
+
+        d.) Container port should be redis default port i.e 6379.
+
+        Create a service named redis-master for Redis master. Port and targetPort should be Redis default port i.e 6379.
+
+        Create another deployment named redis-slave for Redis slave.
+
+        a.) Replicas count should be 2.
+
+        b.) Container name should be slave-redis-nautilus and it should use gcr.io/google_samples/gb-redisslave:v3 image.
+
+        c.) Requests resources as CPU should be 100m and Memory should be 100Mi.
+
+        d.) Define an environment variable named GET_HOSTS_FROM and its value should be dns.
+
+        e.) Container port should be Redis default port i.e 6379.
+
+        Create another service named redis-slave. It should use Redis default port i.e 6379.
+
+        FRONT END TIER
+
+        Create a deployment named frontend.
+
+        a.) Replicas count should be 3.
+
+        b.) Container name should be php-redis-nautilus and it should use gcr.io/google-samples/gb-frontend@sha256:a908df8486ff66f2c4daa0d3d8a2fa09846a1fc8efd65649c0109695c7c5cbff image.
+
+        c.) Request resources as CPU should be 100m and Memory should be 100Mi.
+
+        d.) Define an environment variable named as GET_HOSTS_FROM and its value should be dns.
+
+        e.) Container port should be 80.
+
+        Create a service named frontend. Its type should be NodePort, port should be 80 and its nodePort should be 30009.
+
+        Finally, you can check the guestbook app by clicking on App button.
+
+
+        You can use any labels as per your choice.
+
+        Note: The kubectl utility on the jump-host has been configured to work with the Kubernetes cluster.
+# Solution:
+        # Manifest for the Guest Book App
+        # This manifest creates the following Kubernetes resources:
+        # - Deployment for the Redis master
+        apiVersion: apps/v1
+        kind: Deployment
+        metadata:
+        name: redis-master
+        labels:
+            app: redis
+        spec:
+        replicas: 1
+        selector:
+            matchLabels:
+            app: redis
+        template:
+            metadata:
+            labels:
+                app: redis
+            spec:
+            containers:
+                - name: master-redis-nautilus
+                image: redis:alpine
+                ports:
+                    - containerPort: 6379
+                resources:
+                    requests:
+                    memory: "100Mi"
+                    cpu: "100m"
+                    limits:
+                    memory: "100Mi"
+                    cpu: "100m"
+
+        ---
+        # Service for the Redis master
+        apiVersion: v1
+        kind: Service
+        metadata:
+        name: redis-master
+        spec:
+        selector:
+            app: redis
+        ports:
+            - protocol: TCP 
+            port: 6379
+            targetPort: 6379   
+
+        ---
+        # Deployment for the Redis slave
+        apiVersion: apps/v1
+        kind: Deployment
+        metadata:
+        name: redis-slave
+        labels:
+            app: redis
+        spec:
+        replicas: 2
+        selector:
+            matchLabels:
+            app: redis
+        template:
+            metadata:
+            labels:
+                app: redis
+            spec:
+            containers:
+                - name: slave-redis-nautilus
+                image: gcr.io/google_samples/gb-redisslave:v3
+                ports:
+                    - containerPort: 6379
+                resources:
+                    requests:
+                    memory: "100Mi"
+                    cpu: "100m"
+                    limits:
+                    memory: "100Mi"
+                    cpu: "100m"     
+
+        ---
+        # Service for the Redis slave
+        apiVersion: v1
+        kind: Service
+        metadata:
+        name: redis-slave
+        spec:
+        selector:
+            app: redis
+        ports:
+            - protocol: TCP 
+            port: 6379
+            targetPort: 6379  
+
+        ---
+        # Deployment for the Guest Book App frontend
+        apiVersion: apps/v1
+        kind: Deployment
+        metadata:
+        name: frontend
+        labels:
+            app: guestbook
+        spec:
+        replicas: 3
+        selector:
+            matchLabels:
+            app: guestbook
+        template:
+            metadata:
+            labels:
+                app: guestbook
+            spec:
+            containers:
+                - name: php-redis-nautilus
+                image: gcr.io/google-samples/gb-frontend@sha256:a908df8486ff66f2c4daa0d3d8a2fa09846a1fc8efd65649c0109695c7c5cbff
+                ports:
+                    - containerPort: 80
+                resources:
+                    requests:
+                    memory: "100Mi"
+                    cpu: "100m"
+                    limits:
+                    memory: "100Mi"
+                    cpu: "100m"
+                env:
+                    - name: GET_HOSTS_FROM
+                    value: "dns"
+
+        ---
+        # Service for the Guest Book App frontend
+        apiVersion: v1
+        kind: Service
+        metadata:
+        name: frontend
+        spec:
+        selector:
+            app: guestbook
+        ports:
+            - protocol: TCP
+            port: 80
+            targetPort: 80
+            nodePort: 30009
+        type: NodePort
+
+
+        thor@jump-host ~$ vi Guestbook.yaml
+        thor@jump-host ~$ vi Guestbook.yaml
+        thor@jump-host ~$ kubectl apply -f Guestbook.yaml 
+        service/redis-master created
+        service/frontend created
+        Error from server (BadRequest): error when creating "Guestbook.yaml": Deployment in version "v1" cannot be handled as a Deployment: strict decoding error: unknown field "spec.matchesLabels", unknown field "spec.selector.app"
+        Error from server (BadRequest): error when creating "Guestbook.yaml": Deployment in version "v1" cannot be handled as a Deployment: strict decoding error: unknown field "spec.matchesLabels", unknown field "spec.selector.app"
+        Error from server (BadRequest): error when creating "Guestbook.yaml": Service in version "v1" cannot be handled as a Service: strict decoding error: unknown field "metadata.ports", unknown field "metadata.selector"
+        Error from server (BadRequest): error when creating "Guestbook.yaml": Deployment in version "v1" cannot be handled as a Deployment: strict decoding error: unknown field "spec.matchesLabels", unknown field "spec.selector.app", unknown field "spec.template.spec.containers[0].resources.env"
+        thor@jump-host ~$ vi Guestbook.yaml 
+        thor@jump-host ~$ kubectl apply -f Guestbook.yaml 
+        service/redis-master unchanged
+        service/frontend unchanged
+        Error from server (BadRequest): error when creating "Guestbook.yaml": Deployment in version "v1" cannot be handled as a Deployment: strict decoding error: unknown field "spec.matchesLabels"
+        Error from server (BadRequest): error when creating "Guestbook.yaml": Deployment in version "v1" cannot be handled as a Deployment: strict decoding error: unknown field "spec.matchesLabels"
+        Error from server (BadRequest): error when creating "Guestbook.yaml": Service in version "v1" cannot be handled as a Service: strict decoding error: unknown field "metadata.ports", unknown field "metadata.selector"
+        Error from server (BadRequest): error when creating "Guestbook.yaml": Deployment in version "v1" cannot be handled as a Deployment: strict decoding error: unknown field "spec.matchesLabels", unknown field "spec.template.spec.containers[0].resources.env"
+        thor@jump-host ~$ vi Guestbook.yaml 
+        thor@jump-host ~$ kubectl apply -f Guestbook.yaml 
+        service/redis-master unchanged
+        service/frontend unchanged
+        Error from server (BadRequest): error when creating "Guestbook.yaml": Deployment in version "v1" cannot be handled as a Deployment: strict decoding error: unknown field "spec.selector.matchesLabels"
+        Error from server (BadRequest): error when creating "Guestbook.yaml": Deployment in version "v1" cannot be handled as a Deployment: strict decoding error: unknown field "spec.selector.matchesLabels"
+        Error from server (BadRequest): error when creating "Guestbook.yaml": Service in version "v1" cannot be handled as a Service: strict decoding error: unknown field "metadata.ports", unknown field "metadata.selector"
+        Error from server (BadRequest): error when creating "Guestbook.yaml": Deployment in version "v1" cannot be handled as a Deployment: strict decoding error: unknown field "spec.selector.matchesLabels", unknown field "spec.template.spec.containers[0].resources.env"
+        thor@jump-host ~$ vi Guestbook.yaml 
+
+        [1]+  Stopped                 vim Guestbook.yaml
+        thor@jump-host ~$ vi Guestbook.yaml 
+        thor@jump-host ~$ kubectl apply -f Guestbook.yaml 
+        service/redis-master unchanged
+        service/frontend unchanged
+        Error from server (BadRequest): error when creating "Guestbook.yaml": Deployment in version "v1" cannot be handled as a Deployment: strict decoding error: unknown field "spec.selector.matchesLabels"
+        Error from server (BadRequest): error when creating "Guestbook.yaml": Deployment in version "v1" cannot be handled as a Deployment: strict decoding error: unknown field "spec.selector.matchesLabels"
+        Error from server (BadRequest): error when creating "Guestbook.yaml": Service in version "v1" cannot be handled as a Service: strict decoding error: unknown field "metadata.ports", unknown field "metadata.selector"
+        Error from server (BadRequest): error when creating "Guestbook.yaml": Deployment in version "v1" cannot be handled as a Deployment: strict decoding error: unknown field "spec.selector.matchesLabels", unknown field "spec.template.spec.containers[0].resources.env"
+        thor@jump-host ~$ vi Guestbook.yaml 
+        thor@jump-host ~$ kubectl apply -f Guestbook.yaml 
+        deployment.apps/redis-master created
+        service/redis-master unchanged
+        deployment.apps/redis-slave created
+        service/frontend unchanged
+        Error from server (BadRequest): error when creating "Guestbook.yaml": Service in version "v1" cannot be handled as a Service: strict decoding error: unknown field "metadata.ports", unknown field "metadata.selector"
+        Error from server (BadRequest): error when creating "Guestbook.yaml": Deployment in version "v1" cannot be handled as a Deployment: strict decoding error: unknown field "spec.template.spec.containers[0].resources.env"
+        thor@jump-host ~$ vi Guestbook.yaml 
+        thor@jump-host ~$ kubectl apply -f Guestbook.yaml 
+        deployment.apps/redis-master unchanged
+        service/redis-master unchanged
+        deployment.apps/redis-slave unchanged
+        deployment.apps/frontend created
+        service/frontend unchanged
+        Error from server (BadRequest): error when creating "Guestbook.yaml": Service in version "v1" cannot be handled as a Service: strict decoding error: unknown field "metadata.ports", unknown field "metadata.selector"
+        thor@jump-host ~$ vi Guestbook.yaml 
+        thor@jump-host ~$ kubectl apply -f Guestbook.yaml 
+        deployment.apps/redis-master unchanged
+        service/redis-master unchanged
+        deployment.apps/redis-slave unchanged
+        service/redis-slave created
+        deployment.apps/frontend unchanged
+        service/frontend unchanged
+        thor@jump-host ~$ kubectl get deployment
+        NAME           READY   UP-TO-DATE   AVAILABLE   AGE
+        frontend       3/3     3            3           75s
+        redis-master   1/1     1            1           5m4s
+        redis-slave    2/2     2            2           5m4s
+        thor@jump-host ~$ kubectl get pods
+        NAME                           READY   STATUS    RESTARTS   AGE
+        frontend-bb94884c7-2dbgx       1/1     Running   0          83s
+        frontend-bb94884c7-8bgdp       1/1     Running   0          83s
+        frontend-bb94884c7-9g8sc       1/1     Running   0          83s
+        redis-master-c7bb7585c-vpcsx   1/1     Running   0          5m12s
+        redis-slave-5658cf4c6-gl2dk    1/1     Running   0          5m12s
+        redis-slave-5658cf4c6-hvw25    1/1     Running   0          5m12s
+        thor@jump-host ~$ kubectl get rs
+        NAME                     DESIRED   CURRENT   READY   AGE
+        frontend-bb94884c7       3         3         3       89s
+        redis-master-c7bb7585c   1         1         1       5m18s
+        redis-slave-5658cf4c6    2         2         2       5m18s
+        thor@jump-host ~$ kubectl get svc
+        NAME           TYPE        CLUSTER-IP     EXTERNAL-IP   PORT(S)        AGE
+        frontend       NodePort    10.43.223.76   <none>        80:30009/TCP   18m
+        kubernetes     ClusterIP   10.43.0.1      <none>        443/TCP        45m
+        redis-master   ClusterIP   10.43.168.4    <none>        6379/TCP       18m
+        redis-slave    ClusterIP   10.43.94.145   <none>        6379/TCP       27s
+        thor@jump-host ~$ 
 
