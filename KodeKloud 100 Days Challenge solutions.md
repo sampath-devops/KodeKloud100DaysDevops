@@ -3656,3 +3656,22 @@ Linux Commands
         redis-slave    ClusterIP   10.43.94.145   <none>        6379/TCP       27s
         thor@jump-host ~$ 
 
+# Task 68: Set Up Jenkins Server
+  # Requirement:
+        The DevOps team at xFusionCorp Industries is initiating the setup of CI/CD pipelines and has decided to utilize Jenkins as their server. Execute the task according to the provided requirements:
+
+            1. Install Jenkins on the jenkins server using the yum utility only, and start its service.
+
+            If you face a timeout issue while starting the Jenkins service, refer to this.
+            2. Jenkin's admin user name should be theadmin, password should be Adm!n321, full name should be Kareem and email should be kareem@jenkins.stratos.xfusioncorp.com.
+
+            Note:
+
+            1. To access the jenkins server, connect from the jump host using the root user with the password S3curePass.
+
+            2. After Jenkins server installation, click the Jenkins button on the top bar to access the Jenkins UI and follow on-screen instructions to create an admin user.
+  # Solution:
+        Setup the jenkins using the below installation guide:
+            https://www.jenkins.io/doc/book/installing/linux/
+            For troubleshooting guide if any issue post installtion
+            https://www.jenkins.io/doc/book/system-administration/systemd-services/#starting-services
