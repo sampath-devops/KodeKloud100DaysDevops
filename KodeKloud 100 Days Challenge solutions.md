@@ -3675,3 +3675,193 @@ Linux Commands
             https://www.jenkins.io/doc/book/installing/linux/
             For troubleshooting guide if any issue post installtion
             https://www.jenkins.io/doc/book/system-administration/systemd-services/#starting-services
+
+# Task 71: Configure Jenkins Job for Package Installation
+ # Requirement:
+        Some new requirements have come up to install and configure some packages on the Nautilus infrastructure under Stratos Datacenter. The Nautilus DevOps team installed and configured a new Jenkins server so they wanted to create a Jenkins job to automate this task. Find below more details and complete the task accordingly:
+
+            1. Access the Jenkins UI by clicking on the Jenkins button in the top bar. Log in using the credentials: username admin and password Adm!n321.
+            2. Create a new Jenkins job named install-packages and configure it with the following specifications:
+                Add a string parameter named PACKAGE.
+
+                Configure the job to install a package specified in the $PACKAGE parameter on the storage server (Stratos Datacenter).
+                Build the job at least once (e.g. with parameter PACKAGE=vim-enhanced) so the package is installed on the Storage server and can be verified.
+            Note:
+            1. Ensure to install any required plugins and restart the Jenkins service if necessary. Opt for Restart Jenkins when installation is complete and no jobs are running on the plugin installation/update page. Refresh the UI page if needed after restarting the service.
+            2. Verify that the Jenkins job runs successfully on repeated executions to ensure reliability.
+            3. Capture screenshots of your configuration for documentation and review purposes. Alternatively, use screen recording software like loom.com for comprehensive documentation and sharing.
+ # Solution:
+            Step 1: Access Jenkins UI
+            Action: Open Jenkins UI and log in with admin credentials.
+            Purpose: Gain access to configure plugins, credentials, and create the job.
+
+            Steps:
+
+            Click the Jenkins button in the top bar.
+            Enter:
+            Username: admin
+            Password: Adm!n321
+            Click Log in.
+            Success Indicators:
+
+            ✅ Login page loads successfully.
+            ✅ Dashboard appears after login.
+            Screenshot: Capture login page and Jenkins dashboard.
+
+            🔹 Step 2: Install Required SSH Plugins
+            Action: Install SSH-related plugins to enable remote execution.
+            Purpose: Allow Jenkins to run shell commands on ststor01 via SSH.
+
+            Steps:
+
+            Go to Manage Jenkins → Plugins.
+            Click Available plugins tab.
+            Search: ssh
+            Select:
+            SSH Plugin
+            SSH Credentials Plugin
+            SSH Build Agents Plugin
+            Click Install without restart.
+            Check Restart Jenkins when installation is complete and no jobs are running.
+            Wait for restart → Re-login with admin/Adm!n321.
+            Success Indicators:
+
+            ✅ All three plugins installed.
+            ✅ Jenkins restarts and UI reloads.
+            Screenshot: Capture plugin search, selection, and restart prompt.
+
+            🔹 Step 3: Add SSH Credentials for natasha@ststor01
+            Action: Store SSH private key for natasha in Jenkins credentials.
+            Purpose: Enable secure, passwordless authentication to ststor01.
+
+            Steps:
+
+            Navigate to Manage Jenkins → Credentials → System → Global credentials.
+            Click Add Credentials.
+            Fill:
+            Kind: SSH Username with private key
+            Username: natasha
+            Private Key: Enter directly → Paste private key for ststor01
+            ID: ststor01-ssh
+            Description: SSH key for ststor01
+            Click OK.
+            Success Indicators:
+
+            ✅ Credentials saved with ID ststor01-ssh.
+            ✅ No validation errors.
+            Screenshot: Capture credentials form with private key entered.
+
+            🔹 Step 4: Configure ststor01 as SSH Remote Host
+            Action: Register ststor01 as a trusted SSH host in Jenkins.
+            Purpose: Enable build steps to target ststor01 securely.
+
+            Steps:
+
+            Go to Manage Jenkins → System.
+            Scroll to SSH remote hosts.
+            Click Add.
+            Enter:
+            Hostname: ststor01
+            Port: 22
+            Username: natasha
+            Credentials: ststor01-ssh
+            Click Check Connection → Should show Success.
+            Click Save.
+            Success Indicators:
+
+            ✅ Connection test passes.
+            ✅ Host saved successfully.
+            Screenshot: Capture host config and successful connection check.
+
+            🔹 Step 5: Create Jenkins Job install-packages
+            Action: Create a new Freestyle project job.
+            Purpose: Set up the foundation for parameterized package installation.
+
+            Steps:
+
+            From dashboard, click New Item.
+            Enter:
+            Item name: install-packages
+            Type: Freestyle project
+            Click OK.
+            Success Indicators:
+
+            ✅ Job configuration page opens.
+            Screenshot: Capture job creation screen.
+
+            🔹 Step 6: Add String Parameter PACKAGE
+            Action: Add dynamic input for package name.
+            Purpose: Make the job reusable for any package.
+
+            Steps:
+
+            Check This project is parameterized.
+            Click Add Parameter → String Parameter.
+            Enter:
+            Name: PACKAGE
+            Description: Package to install (e.g., nginx, git)
+            Proceed to build step.
+            Success Indicators:
+
+            ✅ Parameter appears in Build with Parameters.
+            Screenshot: Capture parameter configuration.
+
+            🔹 Step 7: Add SSH Build Step to Install Package
+            Action: Configure remote shell execution on ststor01.
+            Purpose: Run yum install using the provided package name.
+
+            Steps:
+
+            Under Build, click Add build step → Execute shell script on remote host using SSH.
+            Select:
+            SSH Server: ststor01
+            Enter command:
+            echo "Bl@kW" | sudo -S yum install -y $PACKAGE
+            Click Save.
+            Success Indicators:
+
+            ✅ Build step saved with correct command and server.
+            Screenshot: Capture build step with SSH server and command.
+
+            🔹 Step 8: Test the Job with nginx and git
+            Action: Execute the job with sample packages.
+            Purpose: Validate end-to-end functionality.
+
+            Steps:
+
+            Go to install-packages job.
+            Click Build with Parameters.
+            Enter nginx → Click Build.
+            Repeat with git.
+            Monitor Console Output for:
+            Installed: nginx.x86_64
+            Complete!
+            Success Indicators:
+
+            ✅ Both builds succeed.
+            ✅ Console shows package installation.
+            Screenshot: Capture both builds and console output.
+
+            🔹 Step 9: Verify Installation on ststor01
+            Action: SSH into ststor01 and confirm packages are installed.
+            Purpose: Ensure changes were applied on the target server.
+
+            Steps:
+
+            ssh natasha@ststor01
+            Check nginx:
+
+            nginx -v
+            Expected Output:
+
+            nginx version: nginx/1.16.1
+            Check git:
+
+            git --version
+            Expected Output:
+
+            git version 2.43.5
+            exit
+            Success Indicators:
+
+            ✅ Both commands return version info.
