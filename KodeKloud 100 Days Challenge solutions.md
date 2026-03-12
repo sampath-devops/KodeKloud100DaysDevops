@@ -3369,6 +3369,183 @@ Linux Commands
         Normal  Started    31s   kubelet            Started container redis-container
         thor@jumphost ~$ _
   
+# Task 66: Deploy MySQL on Kubernetes
+  # Requirement:
+        A new MySQL server needs to be deployed on Kubernetes cluster. The Nautilus DevOps team was working on to gather the requirements. Recently they were able to finalize the requirements and shared them with the team members to start working on it. Below you can find the details:
+            1.) Create a PersistentVolume mysql-pv, its capacity should be 250Mi, set other parameters as per your preference.
+            2.) Create a PersistentVolumeClaim to request this PersistentVolume storage. Name it as mysql-pv-claim and request a 250Mi of storage. Set other parameters as per your preference.
+            3.) Create a deployment named mysql-deployment, use any mysql image as per your preference. Mount the PersistentVolume at mount path /var/lib/mysql.
+            4.) Create a NodePort type service named mysql and set nodePort to 30007.
+            5.) Create a secret named mysql-root-pass having a key pair value, where key is password and its value is YUIidhb667, create another secret named mysql-user-pass having some key pair values, where frist key is username and its value is kodekloud_tim, second key is password and value is YchZHRcLkL, create one more secret named mysql-db-url, key name is database and value is kodekloud_db3
+            6.) Define some Environment variables within the container:
+                a) name: MYSQL_ROOT_PASSWORD, should pick value from secretKeyRef name: mysql-root-pass and key: password
+                b) name: MYSQL_DATABASE, should pick value from secretKeyRef name: mysql-db-url and key: database
+                c) name: MYSQL_USER, should pick value from secretKeyRef name: mysql-user-pass key key: username
+                d) name: MYSQL_PASSWORD, should pick value from secretKeyRef name: mysql-user-pass and key: password
+            Note: The kubectl utility on jump_host has been configured to work with the kubernetes cluster.
+
+  # Solution:
+
+
+        Manifest file for creating the Persistent Volumes, PVclaims, Secrets, Deployment & service
+            apiVersion: v1
+            kind: PersistentVolume
+            metadata:
+            name: mysql-pv
+            spec:
+            storageClassName: manual
+            capacity:
+                storage: 250Mi
+            accessModes: 
+                - ReadWriteOnce
+            hostPath:
+                path: /mnt/data
+                
+
+            ---
+            apiVersion: v1
+            kind: PersistentVolumeClaim
+            metadata:
+            name: mysql-pv-claim
+            spec:
+            storageClassName: manual
+            accessModes:
+                - ReadWriteOnce
+            resources:
+                requests:
+                storage: 250Mi
+
+            ---
+            apiVersion: v1
+            kind: Secret
+            metadata:
+            name: mysql-root-pass
+            type: Opaque
+            data:
+            password: YUIidhb667== # base64 encoded password
+
+            ---
+            apiVersion: v1
+            kind: Secret
+            metadata:
+            name: mysql-user-pass
+            type: Opaque
+            stringData:
+            username: kodekloud_tim
+            password: YchZHRcLkL== # base64 encoded password
+
+            ---
+            apiVersion: v1
+            kind: Secret
+            metadata:
+            name: mysql-db-url
+            type: Opaque
+            stringData:
+            database: kodekloud_db3
+            
+
+            ---
+            apiVersion: apps/v1
+            kind: Deployment
+            metadata:
+            name: mysql-deployment
+            labels:
+                app: mysql
+            spec:
+            replicas: 1
+            selector:
+                matchLabels:
+                app: mysql
+            template:
+                metadata:
+                labels:
+                    app: mysql
+                spec:
+                containers:
+                    - name: mysql
+                    image: mysql:5.7
+                    env:
+                        - name: MYSQL_ROOT_PASSWORD
+                        valueFrom:
+                            secretKeyRef:
+                            name: mysql-root-pass
+                            key: password
+                        - name: MYSQL_USER
+                        valueFrom:
+                            secretKeyRef:
+                            name: mysql-user-pass
+                            key: username
+                        - name: MYSQL_PASSWORD
+                        valueFrom:
+                            secretKeyRef:
+                            name: mysql-user-pass
+                            key: password
+                        - name: MYSQL_DATABASE
+                        valueFrom:
+                            secretKeyRef:
+                            name: mysql-db-url
+                            key: database
+                    ports:
+                        - containerPort: 3306
+                    volumeMounts:
+                        - mountPath: /var/lib/mysql
+                        name: mysql-pv-storage
+                volumes:
+                    - name: mysql-pv-storage
+                    persistentVolumeClaim:
+                        claimName: mysql-pv-claim
+
+            ---
+            apiVersion: v1 
+            kind: Service
+            metadata:
+            name: mysql
+            spec:
+            selector:
+                app: mysql
+            ports:
+                - protocol: TCP
+                port: 3306
+                targetPort: 3306
+                nodePort: 30007
+            type: NodePort
+
+         # Deploying the above manifest file
+            thor@jumphost ~$ kubectl apply -f mysql-deployment.yaml 
+            persistentvolume/mysql-pv created
+            persistentvolumeclaim/mysql-pv-claim created
+            secret/mysql-root-pass created
+            secret/mysql-user-pass created
+            secret/mysql-db-url created
+            deployment.apps/mysql-deployment created
+            service/mysql created
+            thor@jumphost ~$ kubectl get pv
+            NAME       CAPACITY   ACCESS MODES   RECLAIM POLICY   STATUS   CLAIM                    STORAGECLASS   REASON   AGE
+            mysql-pv   250Mi      RWO            Retain           Bound    default/mysql-pv-claim   manual                  11s
+            thor@jumphost ~$ kubectl get volumes
+            error: the server doesn't have a resource type "volumes"
+            thor@jumphost ~$ kubectl get volume
+            error: the server doesn't have a resource type "volume"
+            thor@jumphost ~$ kubectl get service
+            NAME         TYPE        CLUSTER-IP     EXTERNAL-IP   PORT(S)          AGE
+            kubernetes   ClusterIP   10.96.0.1      <none>        443/TCP          175m
+            mysql        NodePort    10.96.155.41   <none>        3306:30007/TCP   34s
+            thor@jumphost ~$ kubectl get svc
+            NAME         TYPE        CLUSTER-IP     EXTERNAL-IP   PORT(S)          AGE
+            kubernetes   ClusterIP   10.96.0.1      <none>        443/TCP          175m
+            mysql        NodePort    10.96.155.41   <none>        3306:30007/TCP   41s
+            thor@jumphost ~$ kubectl get rs
+            NAME                          DESIRED   CURRENT   READY   AGE
+            mysql-deployment-67556d5497   1         1         1       45s
+            thor@jumphost ~$ kubectl get pods
+            NAME                                READY   STATUS    RESTARTS   AGE
+            mysql-deployment-67556d5497-cbqml   1/1     Running   0          49s
+            thor@jumphost ~$ kubectl get secret
+            NAME              TYPE     DATA   AGE
+            mysql-db-url      Opaque   1      67s
+            mysql-root-pass   Opaque   1      67s
+            mysql-user-pass   Opaque   2      67s
+            thor@jumphost ~$ 
                     
 
 
@@ -3676,6 +3853,39 @@ Linux Commands
             For troubleshooting guide if any issue post installtion
             https://www.jenkins.io/doc/book/system-administration/systemd-services/#starting-services
 
+
+# Task 69: Install Jenkins Plugins
+  # Requirement:    
+    The Nautilus DevOps team has recently setup a Jenkins server, which they want to use for some CI/CD jobs. Before that they want to install some plugins which will be used in most of the jobs. Please find below more details about the task
+        1. Click on the Jenkins button on the top bar to access the Jenkins UI. Login using username admin and Adm!n321 password.
+
+        2. Once logged in, install the Git and GitLab plugins. Note that you may need to restart Jenkins service to complete the plugins installation, If required, opt to Restart Jenkins when installation is complete and no jobs are running on plugin installation/update page i.e update centre.
+        Note:
+        1. After restarting the Jenkins service, wait for the Jenkins login page to reappear before proceeding.
+
+        2. For tasks involving web UI changes, capture screenshots to share for review or consider using screen recording software like loom.com for documentation and sharing.
+ # Solution:
+        Just click on install button under the available plugins section by selecting the both GIT and GitLab plugins
+
+# Task 70: Configure Jenkins User Access
+  # Requirement:
+        The Nautilus team is integrating Jenkins into their CI/CD pipelines. After setting up a new Jenkins server, they're now configuring user access for the development team, Follow these steps:
+
+            1. Click on the Jenkins button on the top bar to access the Jenkins UI. Login with username admin and password Adm!n321.
+
+            2. Create a jenkins user named john with the password BruCStnMT5. Their full name should match John.
+
+            3. Utilize the Project-based Matrix Authorization Strategy to assign overall read permission to the john user.
+
+            4. Remove all permissions for Anonymous users (if any) ensuring that the admin user retains overall Administer permissions.
+
+            5. For the existing job, grant john user only read permissions, disregarding other permissions such as Agent, SCM etc.
+            Note:
+            1. You may need to install plugins and restart Jenkins service. After plugins installation, select Restart Jenkins when installation is complete and no jobs are running on plugin installation/update page.
+            2. After restarting the Jenkins service, wait for the Jenkins login page to reappear before proceeding. Avoid clicking Finish immediately after restarting the service.
+            3. Capture screenshots of your configuration for review purposes. Consider using screen recording software like loom.com for documentation and sharing.
+
+
 # Task 71: Configure Jenkins Job for Package Installation
  # Requirement:
         Some new requirements have come up to install and configure some packages on the Nautilus infrastructure under Stratos Datacenter. The Nautilus DevOps team installed and configured a new Jenkins server so they wanted to create a Jenkins job to automate this task. Find below more details and complete the task accordingly:
@@ -3864,4 +4074,40 @@ Linux Commands
             exit
             Success Indicators:
 
+
             ✅ Both commands return version info.
+
+# Task 72: Jenkins Parameterized Builds
+ # Requirement:
+        A new DevOps Engineer has joined the team and he will be assigned some Jenkins related tasks. Before that, the team wanted to test a simple parameterized job to understand basic functionality of parameterized builds. He is given a simple parameterized job to build in Jenkins. Please find more details below:
+
+            Click on the Jenkins button on the top bar to access the Jenkins UI. Login using username admin and password Adm!n321.
+            1. Create a parameterized job which should be named as parameterized-job
+            2. Add a string parameter named Stage; its default value should be Build.
+            3. Add a choice parameter named env; its choices should be Development, Staging and Production.
+            4. Configure job to execute a shell command, which should echo both parameter values (you are passing in the job).
+            5. Build the Jenkins job at least once with choice parameter value Development to make sure it passes.
+            Note:
+            1. You might need to install some plugins and restart Jenkins service. So, we recommend clicking on Restart Jenkins when installation is complete and no jobs are running on plugin installation/update page i.e update centre. Also, Jenkins UI sometimes gets stuck when Jenkins service restarts in the back end. In this case, please make sure to refresh the UI page.
+            2. For these kind of scenarios requiring changes to be done in a web UI, please take screenshots so that you can share it with us for review in case your task is marked incomplete. You may also consider using a screen recording software such as loom.com to record and share your work.
+  # Solution:
+        Create a job named: parameterized-job
+
+            Select This project is parameterised > Add Parameters:
+
+            String Parameter:
+            Name: Stage
+            Default Value: Build
+            Choice Parameter:
+            Name: env
+            Choices:
+            Development
+            Staging
+            Production
+            Add Build Steps > Execute Shell
+
+            echo $Stage
+            echo $env
+            Execute the job with Production env
+
+
