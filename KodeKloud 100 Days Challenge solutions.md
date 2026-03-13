@@ -4110,4 +4110,244 @@ Linux Commands
             echo $env
             Execute the job with Production env
 
+# Task 73: Jenkins Scheduled Jobs
+  # Requirement:
+        The devops team of xFusionCorp Industries is working on to setup centralised logging management system to maintain and analyse server logs easily. Since it will take some time to implement, they wanted to gather some server logs on a regular basis. At least one of the app servers is having issues with the Apache server. The team needs Apache logs so that they can identify and troubleshoot the issues easily if they arise. So they decided to create a Jenkins job to collect logs from the server. Please create/configure a Jenkins job as per details mentioned below:
+
+            Click on the Jenkins button on the top bar to access the Jenkins UI. Login using username admin and password Adm!n321
+
+            1. Create a Jenkins jobs named copy-logs.
+            2. Configure it to periodically build every 11 minutes to copy the Apache logs (both access_log and error_log) from App Server 2 (stapp02) from the default logs location to location /usr/src/itadmin on the Storage Server.
+            3. Build the job at least once so that the logs are copied and can be verified.
+            Note:
+            1. You might need to install some plugins and restart Jenkins. We recommend selecting Restart Jenkins when installation is complete and no jobs are running in the update centre. Refresh the page if the UI gets stuck after a restart.
+            2. Define the cron expression as required (e.g. */10 * * * * to run every 10 minutes).
+            3. For scenarios that require web UI changes, take screenshots or record your work (e.g. using loom.com) so you can share it for review if the task is marked incomplete.
+
+  # Solution:
+        Step 1: Access Jenkins UI
+        Action: Open Jenkins UI and log in with admin credentials.
+        Purpose: Gain access to install plugins and configure job.
+
+        Steps:
+
+        Click the Jenkins button in the top bar.
+        Enter:
+        Username: admin
+        Password: Adm!n321
+        Click Log in.
+        Success Indicators:
+
+        ✅ Login page loads successfully.
+        ✅ Dashboard appears after login.
+        🔹 Step 2: Install Required SSH Plugins
+        Action: Install plugins for remote SSH execution and file transfer.
+        Purpose: Enable secure communication with stapp02 and ststor01.
+
+        Steps:
+
+        Go to Manage Jenkins → Plugins → Available plugins.
+        Search and install:
+        SSH Plugin
+        SSH Credentials Plugin
+        Publish Over SSH Plugin
+        Check Restart Jenkins when installation is complete and no jobs are running.
+        Re-login after restart.
+        Success Indicators:
+
+        ✅ All 3 plugins installed.
+        ✅ Jenkins restarts successfully.
+        🔹 Step 3: Add SSH Credentials for steve@stapp02 and natasha@ststor01
+        Action: Store SSH credentials securely in Jenkins.
+        Purpose: Avoid hardcoding passwords in job commands.
+
+        Steps:
+
+        Go to Manage Jenkins → Credentials → System → Global credentials.
+        Click Add Credentials → Username with password.
+        For App Server 2:
+        Username: steve
+        Password: Bl@kW
+        ID: stapp02-cred
+        Description: App Server 2 SSH Access
+        Repeat for Storage Server:
+        Username: natasha
+        Password: Bl@kW
+        ID: ststor01-cred
+        Description: Storage Server SSH Access
+        Click OK.
+        Success Indicators:
+
+        ✅ Credentials saved with correct IDs.
+        ✅ No errors.
+        🔹 Step 4: Configure SSH Remote Hosts
+        Action: Register stapp02 and ststor01 as trusted SSH hosts.
+        Purpose: Allow Jenkins to execute commands and transfer files.
+
+        Steps:
+
+        Go to Manage Jenkins → System → SSH remote hosts.
+        Add stapp02:
+        Hostname: stapp02
+        Port: 22
+        Username: steve
+        Credentials: stapp02-cred
+        Click Check Connection → Success
+        Add ststor01:
+        Hostname: ststor01
+        Port: 22
+        Username: natasha
+        Credentials: ststor01-cred
+        Click Check Connection → Success
+        Click Save.
+        Success Indicators:
+
+        ✅ Both hosts show Success in connection test.
+        🔹 Step 5: Create Jenkins Job copy-logs
+        Action: Create a new Freestyle project.
+        Purpose: Foundation for scheduled log collection.
+
+        Steps:
+
+        From dashboard, click New Item.
+        Enter:
+        Item name: copy-logs
+        Type: Freestyle project
+        Click OK.
+        Success Indicators:
+
+        ✅ Job configuration page opens.
+        🔹 Step 6: Schedule Build Every 10 Minutes
+        Action: Configure cron trigger.
+        Purpose: Automate log collection.
+
+        Steps:
+
+        Check Build periodically.
+        Enter cron schedule:
+        H/10 * * * *
+        (Runs every 10 minutes)
+
+        Success Indicators:
+
+        ✅ Schedule saved correctly.
+        🔹 Step 7: Add SSH Build Step to Copy Logs
+        Action: Execute SCP command from stapp02 to ststor01.
+        Purpose: Transfer both Apache logs securely.
+
+        Steps:
+
+        Under Build, click Add build step → Execute shell script on remote host using SSH.
+        Select:
+        SSH Server: stapp02
+        Enter command:
+        sshpass -p "Bl@kW" scp -p -o StrictHostKeyChecking=no /var/log/httpd/* natasha@ststor01:/usr/src/sysops
+        Click Save.
+        Success Indicators:
+
+        ✅ Command saved.
+        ✅ No syntax errors.
+        🔹 Step 8: Trigger Build Manually
+        Action: Run job to test immediately.
+        Purpose: Validate end-to-end functionality.
+
+        Steps:
+
+        Go to copy-logs job.
+        Click Build Now.
+        Monitor Console Output for:
+        access_log  100%   XXMB
+        error_log   100%   XXKB
+        Success Indicators:
+
+        ✅ Build succeeds.
+        ✅ Files transferred.
+        🔹 Step 9: Verify Logs on ststor01
+        Action: SSH into storage server and check files.
+        Purpose: Confirm logs are copied correctly.
+
+        Steps:
+
+        ssh natasha@ststor01
+        cd /usr/src/sysops/
+        ls -l
+        Expected Output:
+
+        -rw-r--r-- 1 natasha natasha  ... access_log
+        -rw-r--r-- 1 natasha natasha  ... error_log
+        cat error_log | head
+        Expected Output:
+
+        [Sat Nov 01 13:28:25.398041 2025] [suexec:notice] ...
+        AH00558: httpd: Could not reliably determine...
+        exit
+        Success Indicators:
+
+        ✅ Both files exist.
+        ✅ Content is readable.
+        🔹 Step 10: Document the Process
+        Action: Capture all configuration steps and build execution.
+        Purpose: Enable replication and audit.
+
+        Steps:
+
+        Document all configuration details:
+        Login credentials
+        Plugin installation
+        Credentials configuration (2)
+        SSH hosts configuration (2)
+        Job configuration (cron + SCP)
+        Build console output
+        Verification on ststor01
+        Success Indicator:
+
+        ✅ All steps documented.
+        📋 Quick Reference Guide
+        Jenkins UI Steps:
+
+        Login: admin / Adm!n321
+        Install: SSH, SSH Credentials, Publish Over SSH → Restart
+        Add Credentials:
+        stapp02-cred: steve / Bl@kW
+        ststor01-cred: natasha / Bl@kW
+        Add SSH Hosts:
+        stapp02 → steve + stapp02-cred
+        ststor01 → natasha + ststor01-cred
+        Create job: copy-logs (Freestyle)
+        Schedule: H/10 * * * *
+        Build Step → Execute shell on remote host (stapp02):
+        sshpass -p "Bl@kW" scp -p -o StrictHostKeyChecking=no /var/log/httpd/* natasha@ststor01:/usr/src/sysops
+        Build Now → Verify on ststor01:
+        ssh natasha@ststor01 "ls -l /usr/src/sysops/"
+        💡 Common SCP & SSH Issues & Fixes
+        Issue 1: sshpass: command not found
+        Problem: sshpass missing on stapp02
+        Fix:
+
+        sudo yum install -y sshpass
+        Issue 2: Permission Denied
+        Problem: natasha@ststor01: Permission denied
+        Fix:
+
+        Ensure Bl@kW is correct
+        Check /usr/src/sysops exists and is writable
+        Issue 3: Host Key Verification Failed
+        Problem: Host key verification failed
+        Fix:
+
+        Use -o StrictHostKeyChecking=no
+        🔧 Troubleshooting Job Failures
+        Error: Connection Refused
+        Symptoms: Cannot connect to port 22
+        Solution:
+
+        Verify host is up
+        Check firewall:
+        ssh steve@stapp02 "sudo firewall-cmd --list-all"
+        Error: File Not Found
+        Symptoms: /var/log/httpd/*: No such file or directory
+        Solution:
+
+        Confirm Apache is running:
+        ssh steve@stapp02 "ls -l /var/log/httpd/"
 
