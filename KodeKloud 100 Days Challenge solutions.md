@@ -4351,3 +4351,218 @@ Linux Commands
         Confirm Apache is running:
         ssh steve@stapp02 "ls -l /var/log/httpd/"
 
+
+# Task 74: Jenkins Database Backup Job
+  # Requirement:
+        There is a requirement to create a Jenkins job to automate the database backup. Below you can find more details to accomplish this task:
+
+            Click on the Jenkins button on the top bar to access the Jenkins UI. Login using username admin and password Adm!n321.
+            Create a Jenkins job named database-backup.
+            Configure it to take a database dump of the kodekloud_db01 database present on the App server (stapp01) in Stratos Datacenter, the database user is kodekloud_roy and password is asdfgdsd.
+            The dump should be named in db_$(date +%F).sql format, where date +%F is the current date.
+            Copy the db_$(date +%F).sql dump to the Storage server (ststor01) under location /home/natasha/db_backups.
+            Further, schedule this job to run periodically at */10 * * * * (please use this exact schedule format).
+            Note:
+            You might need to install some plugins and restart Jenkins service. So, we recommend clicking on Restart Jenkins when installation is complete and no jobs are running on plugin installation/update page i.e update centre. Also, Jenkins UI sometimes gets stuck when Jenkins service restarts in the back end. In this case please make sure to refresh the UI page.
+            Please make sure to define you cron expression like this */10 * * * * (this is just an example to run job every 10 minutes).
+            For these kind of scenarios requiring changes to be done in a web UI, please take screenshots so that you can share it with us for review in case your task is marked incomplete. You may also consider using a screen recording software such as loom.com to record and share your work.
+
+  # Solution:
+        Step 1: Access Jenkins UI
+        Action: Open Jenkins UI and log in with admin credentials.
+        Purpose: Gain access to install plugins and configure job.
+
+        Steps:
+
+        Click the Jenkins button in the top bar.
+        Enter:
+        Username: admin
+        Password: Adm!n321
+        Click Log in.
+        Success Indicators:
+
+        ✅ Login page loads successfully.
+        ✅ Dashboard appears after login.
+        🔹 Step 2: Install Required SSH Plugins
+        Action: Install plugins for remote execution and file transfer.
+        Purpose: Enable secure SSH access to stdb01 and stbkp01.
+
+        Steps:
+
+        Go to Manage Jenkins → Plugins → Available plugins.
+        Search and install:
+        SSH Credentials Plugin
+        Publish Over SSH Plugin
+        Check Restart Jenkins when installation is complete and no jobs are running.
+        Re-login after restart.
+        Success Indicators:
+
+        ✅ Both plugins installed.
+        ✅ Jenkins restarts successfully.
+        🔹 Step 3: Configure SSH Servers in Publish Over SSH
+        Action: Add stdb01 and stbkp01 as trusted SSH servers.
+        Purpose: Allow Jenkins to execute commands and transfer files.
+
+        Steps:
+
+        Go to Manage Jenkins → System → Publish Over SSH.
+        Under SSH Servers, click Add → Add Database Server:
+        Name: stdb01
+        Hostname: stdb01.stratos.xfusioncorp.com
+        Username: peter
+        Click Advanced → Check Use password authentication
+        Password: Sp!dy
+        Port: 22
+        Click Test Configuration → Should show Success
+        Click Add again → Add Backup Server:
+        Name: stbkp01
+        Hostname: stbkp01.stratos.xfusioncorp.com
+        Username: clint
+        Click Advanced → Password: H@wk3y3
+        Port: 22
+        Click Test Configuration → Success
+        Click Apply → Save.
+        Success Indicators:
+
+        ✅ Both servers show Success in test.
+        ✅ Configuration saved.
+        🔹 Step 4: Create Jenkins Job database-backup
+        Action: Create a new Freestyle project.
+        Purpose: Foundation for automated backup.
+
+        Steps:
+
+        From dashboard, click New Item.
+        Enter:
+        Item name: database-backup
+        Type: Freestyle project
+        Click OK.
+        Success Indicators:
+
+        ✅ Job configuration page opens.
+        🔹 Step 5: Schedule Build Every 10 Minutes
+        Action: Configure cron trigger.
+        Purpose: Automate backup frequency.
+
+        Steps:
+
+        Check Build periodically.
+        Enter cron schedule:
+        */10 * * * *
+        (Runs every 10 minutes)
+
+        Success Indicators:
+
+        ✅ Schedule saved correctly.
+        🔹 Step 6: Add Build Step - Execute Commands on stdb01
+        Action: Run mysqldump, install sshpass, and transfer file.
+        Purpose: Create dump and copy to backup server.
+
+        Steps:
+
+        Under Build, click Add build step → Send files or execute commands over SSH.
+        Select:
+        SSH Server: stdb01
+        In Exec command, enter:
+        mkdir -p /tmp/db-backup
+        mysqldump -u kodekloud_roy -p'asdfgdsd' kodekloud_db01 > /tmp/db-backup/db_$(date +%F).sql
+        ls -la /tmp/db-backup/
+        sudo apt install sshpass -y
+        sshpass -p 'H@wk3y3' scp -o StrictHostKeyChecking=no /tmp/db-backup/*.sql clint@stbkp01:/home/clint/db_backups
+        rm -rf /tmp/db-backup
+        Click Save.
+        Success Indicators:
+
+        ✅ Command saved.
+        ✅ No syntax errors.
+        🔹 Step 7: Trigger Build Manually
+        Action: Run job to test immediately.
+        Purpose: Validate end-to-end functionality.
+
+        Steps:
+
+        Go to database-backup job.
+        Click Build Now.
+        Monitor Console Output for:
+        Dumping database...
+        Installing sshpass...
+        db_2025-11-15.sql  100%
+        Success Indicators:
+
+        ✅ Build succeeds.
+        ✅ File transferred.
+        🔹 Step 8: Verify Backup on stbkp01
+        Action: SSH into backup server and check file.
+        Purpose: Confirm dump was copied correctly.
+
+        Steps:
+
+        ssh clint@stbkp01
+        cd /home/clint/db_backups/
+        ls -la
+        Expected Output:
+
+        -rw-r--r-- 1 clint clint 44958 Nov 15 12:16 db_2025-11-15.sql
+        head -20 db_2025-11-15.sql
+        Expected Output:
+
+        -- MySQL dump 10.13  Distrib 8.0.30...
+        --
+        -- Host: localhost    Database: kodekloud_db01
+        exit
+        Success Indicators:
+
+        ✅ File exists with correct name.
+        ✅ SQL dump is valid.
+        📋 Quick Reference Guide
+        Jenkins UI Steps:
+
+        Login: admin / Adm!n321
+        Install: SSH Credentials, Publish Over SSH → Restart
+        Configure Publish Over SSH:
+        stdb01: peter / Sp!dy
+        stbkp01: clint / H@wk3y3
+        Create job: database-backup (Freestyle)
+        Schedule: */10 * * * *
+        Build Step → Send files or execute commands over SSH (stdb01):
+        mkdir -p /tmp/db-backup
+        mysqldump -u kodekloud_roy -p'asdfgdsd' kodekloud_db01 > /tmp/db-backup/db_$(date +%F).sql
+        sudo apt install sshpass -y
+        sshpass -p 'H@wk3y3' scp -o StrictHostKeyChecking=no /tmp/db-backup/*.sql clint@stbkp01:/home/clint/db_backups
+        rm -rf /tmp/db-backup
+        Build Now → Verify:
+        ssh clint@stbkp01 "ls -l /home/clint/db_backups/db_*.sql"
+        💡 Common SCP & MySQL Issues & Fixes
+        Issue 1: mysqldump: command not found
+        Problem: MySQL client not installed
+        Fix:
+
+        sudo apt install mysql-client -y
+        Issue 2: Permission denied (publickey)
+        Problem: SSH key auth fails
+        Fix:
+
+        Use sshpass with password
+        Ensure StrictHostKeyChecking=no
+        Issue 3: Directory Not Found
+        Problem: /home/clint/db_backups missing
+        Fix:
+
+        mkdir -p /home/clint/db_backups
+        chown clint:clint /home/clint/db_backups
+        🔧 Troubleshooting Job Failures
+        Error: Authentication Failed
+        Symptoms: Permission denied
+        Solution:
+
+        Double-check passwords: Sp!dy, H@wk3y3
+        Test manually:
+        ssh peter@stdb01
+        Error: File Not Transferred
+        Symptoms: No file on stbkp01
+        Solution:
+
+        Check sshpass installation
+        Verify scp path and permissions
+
+
