@@ -4565,4 +4565,62 @@ Linux Commands
         Check sshpass installation
         Verify scp path and permissions
 
+# task 75: Jenkins Slave Nodes
+ # Requirement:
+        The Nautilus DevOps team has installed and configured new Jenkins server in Stratos DC which they will use for CI/CD and for some automation tasks. There is a requirement to add all app servers as slave nodes in Jenkins so that they can perform tasks on these servers using Jenkins. Find below more details and accomplish the task accordingly.
+            Click on the Jenkins button on the top bar to access the Jenkins UI. Login using username admin and password Adm!n321.
 
+            1. Add all app servers as SSH build agent/slave nodes in Jenkins. Slave node name for app server 1, app server 2 and app server 3 must be App_server_1, App_server_2, App_server_3 respectively.
+            2. Add labels as below:
+            App_server_1 : stapp01
+
+            App_server_2 : stapp02
+
+            App_server_3 : stapp03
+
+            3. Remote root directory for App_server_1 must be /home/tony/jenkins, for App_server_2 must be /home/steve/jenkins and for App_server_3 must be /home/banner/jenkins.
+
+            4. Make sure slave nodes are online and working properly.
+            Note:
+
+            1. You might need to install some plugins and restart Jenkins service. So, we recommend clicking on Restart Jenkins when installation is complete and no jobs are running on plugin installation/update page i.e update centre. Also, Jenkins UI sometimes gets stuck when Jenkins service restarts in the back end. In this case, please make sure to refresh the UI page.
+
+            2. For these kind of scenarios requiring changes to be done in a web UI, please take screenshots so that you can share it with us for review in case your task is marked incomplete. You may also consider using a screen recording software such as loom.com to record and share your work.
+
+  # Solution:
+        Prerequisites on App Servers:
+            1. Java Installed: Jenkins agents require a compatible Java Runtime Environment (JRE/JDK) to run the agent client program .
+            2. Dedicated User Account: Create a user account (e.g., jenkins) for the Jenkins controller to log in with.
+            3. Working Directory: Create a dedicated workspace directory (e.g., /home/jenkins/agent) with appropriate read/write permissions for the jenkins user.
+            4. SSH Enabled: Ensure the SSH service is running and the Jenkins controller can reach the app server on port 22
+        Configure SSH Connectivity (Key-based is recommended) 
+            1. Generate an SSH key pair on the Jenkins controller and copy the public key to each app server to enable passwordless login. 
+            2. On the Jenkins controller, run: ssh-keygen -t rsa (press Enter for defaults and an empty passphrase).
+            3. Copy the public key to the agent(s) using ssh-copy-id:
+                    ssh-copy-id jenkins@<app_server_ip>
+            4. Verify the connection by manually SSHing from the Jenkins master to each app server: ssh jenkins@<app_server_ip>
+
+        Add SSH Credentials in Jenkins
+            1. Navigate to Manage Jenkins > Manage Credentials > System (global) > Add Credentials.
+            2. Select Kind: SSH Username with private key/ User Name & Password.
+            3. Enter the Username (e.g., jenkins).
+            4. For Private Key, select Enter directly and paste the content of the private key file (~/.ssh/id_rsa from the controller machine) into the text box. / For Password enter the direct password
+            5. Provide an ID and Description, then click Create.
+            6. Repeat this for any other distinct users on different app servers. 
+
+        Add App Servers as Agent Nodes 
+            For each app server, follow these steps in the Jenkins UI:
+            1. Go to Manage Jenkins > Manage Nodes and Clouds.
+             Click New Node.
+            2. Enter a Node name (e.g., App_server_1) and select Permanent Agent, then click Create.
+            On the configuration page:
+            3. Description: Add an optional description (e.g., App Server 1 Build Agent).
+            4. Number of executors: Set the number of parallel jobs the agent can handle (e.g., 2).
+            5. Remote root directory: Specify the workspace path created earlier (e.g., /home/jenkins/agent).
+            6. Labels: Assign relevant labels (e.g., appserver1 build) to group agents and target builds to specific nodes.
+            7. Launch method: Select Launch agents via SSH.
+            8. Host: Enter the IP address or hostname of the app server.
+            9. Credentials: Select the SSH credential you created in the previous step.
+            10. Host Key Verification Strategy: For initial setup, you may select Non verifying Verification Strategy, but for production, the Jenkins documentation recommends using Known hosts file Verification Strategy.
+            11. Availability: Select Keep this agent online as much as possible.
+            12. Click Save. 
