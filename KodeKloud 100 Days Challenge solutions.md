@@ -4648,3 +4648,158 @@ Linux Commands
         2. Go to Manage Jenkins --> Security. Under Authorization --> select Project-based Matrix Authorization Strategy.--> Add your users and just give them the overall read permissions.
 
         3. Now go to your Job > Configure. Under General select Enable project-based security --> Select Inherit permissions from parent ACL under inheritance strategy --> Add your users with the required permissions.
+
+# Day 77: Jenkins Deploy Pipeline
+  # Requirement:
+        The development team of xFusionCorp Industries is working on to develop a new static website and they are planning to deploy the same on Nautilus App Server using Jenkins pipeline. They have shared their requirements with the DevOps team and accordingly we need to create a Jenkins pipeline job. Please find below more details about the task:
+
+            Click on the Jenkins button on the top bar to access the Jenkins UI. Login using username admin and password Adm!n321.
+
+            Similarly, click on the Gitea button on the top bar to access the Gitea UI. Login using username sarah and password Sarah_pass123. There under user sarah you will find a repository named web_app that is already cloned on App Server 1 under /var/www/html. sarah is a developer who is working on this repository.
+
+            Add a slave node named App Server 1. It should be labeled as stapp01 and its remote root directory should be /home/sarah/jenkins_agent (the repository is cloned under /var/www/html; the agent uses a separate directory so it does not pollute the repo).
+
+            We have already cloned repository on App Server 1 under /var/www/html.
+
+            Apache is already installed on the app server and is running on port 8080.
+
+            Create a Jenkins pipeline job named datacenter-webapp-job (it must not be a Multibranch pipeline) and configure it to:
+
+            Deploy the code from web_app repository under /var/www/html on App Server 1, as this is the document root of the app server. The pipeline should have a single stage named Deploy ( which is case sensitive ) to accomplish the deployment.
+
+            LB server is already configured. You should be able to see the latest changes you made by clicking on the App button. Please make sure the required content is loading on the main URL https://<LBR-URL> i.e there should not be a sub-directory like https://<LBR-URL>/web_app etc.
+
+
+            Note:
+
+
+            You might need to install some plugins and restart Jenkins service. So, we recommend clicking on Restart Jenkins when installation is complete and no jobs are running on plugin installation/update page i.e update centre. Also, Jenkins UI sometimes gets stuck when Jenkins service restarts in the back end. In this case, please make sure to refresh the UI page.
+
+
+            For these kind of scenarios requiring changes to be done in a web UI, please take screenshots so that you can share it with us for review in case your task is marked incomplete. You may also consider using a screen recording software such as loom.com to record and share your work.
+
+  # Solution:
+        Step:1
+        Install Required Plugins
+        Action: Install SSH Build Agents and Pipeline plugins.
+        Purpose: Enable SSH nodes and pipeline jobs.
+
+            Steps:
+                Go to Manage Jenkins → Plugins → Available plugins.
+                Install:
+                SSH Build Agents
+                Pipeline
+                Check Restart Jenkins when installation is complete.
+                Re-login.
+
+        Step:2
+        1. Validate the java versions in both Jenkins server and Stapp01 server
+        2. Java in Stapp01 server is running with jdk11 version but in jenkins running with jdk-21 version
+        3. So upgrade the java in stapp01 server to jdk 21
+            # Install Java
+            sudo yum install java-21-openjdk -y
+            java -version
+
+        Step:3
+        Add SSH Credentials for App Server
+        Action: Store Sarah credentials securely.
+        Purpose: Enable SSH agent launch.
+
+        Steps:
+            1. Go to Manage Jenkins → Credentials → System → Global credentials.
+            2. Click Add Credentials → Username with password.
+            3. Enter:
+            Username: sarah
+            Password: Sarah_pass123
+            ID: stapp01
+            Description: app Server SSH Access
+            Click OK.
+
+        Step:4
+        Add Storage Server as SSH Slave Node
+        Steps:
+            Go to Manage Jenkins → Nodes → New Node.
+            Enter:
+            Node name: App Server1
+            Type: Permanent Agent
+            Click OK.
+            Configure:
+            Remote root directory: /home/sarah/jenkins_agent
+            Labels: stapp01
+            Launch method: Launch agent via SSH
+            Host: stapp01
+            Credentials: stapp01
+            Click Save.
+        
+        Step:5
+        establish the SSH connection between Jenkins server and App server
+        Steps in Jenkins server
+            1. ssh-keygen
+            2. ssh-copy-id sarah@stapp01
+            3. Enter the sarah user password 
+            4. It will establish the SSH connection
+
+        Step:6
+        Create Pipeline Job datacenter-webapp-job
+            Action: Create pipeline to deploy web app.
+            Purpose: Automate git pull on storage server.
+
+            Steps:
+
+            Click New Item.
+            Enter:
+            Item name: datacenter-webapp-job
+            Type: Pipeline
+            Click OK.
+            Configure:
+            Definition: Pipeline script
+            Paste script:
+            pipeline {
+                agent { label 'stapp01' }
+                stages {
+                    stage('Deploy') {
+                        steps {
+                script {
+                    sh '''
+                        rm -rf /tmp/web_app
+                        git clone http://git.stratos.xfusioncorp.com/sarah/web_app.git /tmp/web_app
+                        ls -la /tmp/web_app
+                        cp -r /tmp/web_app/* /var/www/html/
+                        rm -rf /tmp/web_app
+                    '''
+                }
+            }
+                    }
+                }
+            }
+            Click Save.
+        Result for Pipeline Job:
+            Started by user admin
+            [Pipeline] Start of Pipeline
+            [Pipeline] node
+            Running on App Server 1 in /home/sarah/jenkins_agent/workspace/datacenter-webapp-job
+            [Pipeline] {
+            [Pipeline] stage
+            [Pipeline] { (Deploy)
+            [Pipeline] script
+            [Pipeline] {
+            [Pipeline] sh
+            + rm -rf /tmp/web_app
+            + git clone https://3000-port-i4kt5qqbuwhbf3dm.labs.kodekloud.com/sarah/web_app.git /tmp/web_app
+            Cloning into '/tmp/web_app'...
+            + ls -la /tmp/web_app
+            total 16
+            drwxr-xr-x  3 sarah sarah 4096 Mar 17 18:06 .
+            drwxrwxrwt 14 root  root  4096 Mar 17 18:06 ..
+            drwxr-xr-x  7 sarah sarah 4096 Mar 17 18:06 .git
+            -rw-r--r--  1 sarah sarah   35 Mar 17 18:06 index.html
+            + cp -r /tmp/web_app/index.html /var/www/html/
+            + rm -rf /tmp/web_app
+            [Pipeline] }
+            [Pipeline] // script
+            [Pipeline] }
+            [Pipeline] // stage
+            [Pipeline] }
+            [Pipeline] // node
+            [Pipeline] End of Pipeline
+            Finished: SUCCESS
