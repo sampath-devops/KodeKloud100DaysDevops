@@ -4803,3 +4803,245 @@ Linux Commands
             [Pipeline] // node
             [Pipeline] End of Pipeline
             Finished: SUCCESS
+
+# Task 78: Jenkins Conditional Pipeline
+  # Requirement:
+        The development team of xFusionCorp Industries is working on to develop a new static website and they are planning to deploy the same on Nautilus App Server using Jenkins pipeline. They have shared their requirements with the DevOps team and accordingly we need to create a Jenkins pipeline job. Please find below more details about the task:
+
+            Click on the Jenkins button on the top bar to access the Jenkins UI. Login using username admin and password Adm!n321.
+
+            Similarly, click on the Gitea button on the top bar to access the Gitea UI. Login using username sarah and password Sarah_pass123. There under user sarah you will find a repository named web_app that is already cloned on App Server 1 under /var/www/html. sarah is a developer who is working on this repository.
+
+
+            Add a slave node named App Server 1. It should be labeled as stapp01 and its remote root directory should be /home/sarah/jenkins_agent (the repository is cloned under /var/www/html).
+
+
+            We have already cloned repository on App Server 1 under /var/www/html.
+
+
+            Apache is already installed on the app server and is running on port 8080.
+
+
+            Create a Jenkins pipeline job named datacenter-webapp-job (it must not be a Multibranch pipeline) and configure it to:
+
+
+            Add a string parameter named BRANCH.
+
+            It should conditionally deploy the code from web_app repository under /var/www/html on App Server 1, as this is the document root of the app server. The pipeline should have a single stage named Deploy ( which is case sensitive ) to accomplish the deployment.
+
+            The pipeline should be conditional, if the value master is passed to the BRANCH parameter then it must deploy the master branch, on the other hand if the value feature is passed to the BRANCH parameter then it must deploy the feature branch.
+
+            LB server is already configured. You should be able to see the latest changes you made by clicking on the App button. Please make sure the required content is loading on the main URL https://<LBR-URL> i.e there should not be a sub-directory like https://<LBR-URL>/web_app etc.
+
+
+            Note:
+
+
+            You might need to install some plugins and restart Jenkins service. So, we recommend clicking on Restart Jenkins when installation is complete and no jobs are running on plugin installation/update page i.e update centre. Also, Jenkins UI sometimes gets stuck when Jenkins service restarts in the back end. In this case, please make sure to refresh the UI page.
+
+
+            For these kind of scenarios requiring changes to be done in a web UI, please take screenshots so that you can share it with us for review in case your task is marked incomplete. You may also consider using a screen recording software such as loom.com to record and share your work.
+
+  # Solution:
+        All steps are same as previous task 77 but pipeline job we need to select "this Project is parametirised" option then pass the branch values
+
+            During creating the job, select This is parameterized and add string parameter:
+            Name: BRANCH
+            Default Value: master
+            pipeline {
+            agent { label 'ststor01' }
+
+            stages {
+                stage('Deploy') {
+                    steps {
+                        script {
+                            sh '''
+                                rm -rf /tmp/web_app
+                                git clone -b ${BRANCH} http://git.stratos.xfusioncorp.com/sarah/web_app.git /tmp/web_app
+                                ls -la /tmp/web_app
+                                echo 'Bl@kW' | sudo -S cp -r /tmp/web_app/* /var/www/html/
+                                rm -rf /tmp/web_app
+                            '''
+                        }
+                    }
+                }
+            }
+        }
+
+        Started by user admin
+
+        [Pipeline] Start of Pipeline
+        [Pipeline] node
+        Running on App Server 1
+        in /home/sarah/jenkins_agent/workspace/datacenter-webapp-job
+        [Pipeline] {
+        [Pipeline] stage
+        [Pipeline] { (Deploy)
+        [Pipeline] script
+        [Pipeline] {
+        [Pipeline] sh
+        + rm -rf /tmp/web_app
+        + git clone -b feature https://3000-port-n4pmdmtzmtlx47qt.labs.kodekloud.com/sarah/web_app.git /tmp/web_app
+        Cloning into '/tmp/web_app'...
+        + ls -la /tmp/web_app
+        total 20
+        drwxr-xr-x  3 sarah sarah 4096 Mar 18 17:56 .
+        drwxrwxrwt 17 root  root  4096 Mar 18 17:56 ..
+        drwxr-xr-x  7 sarah sarah 4096 Mar 18 17:56 .git
+        -rw-r--r--  1 sarah sarah   18 Mar 18 17:56 feature.html
+        -rw-r--r--  1 sarah sarah    8 Mar 18 17:56 index.html
+        + cp -r /tmp/web_app/feature.html /tmp/web_app/index.html /var/www/html/
+        + rm -rf /tmp/web_app
+        [Pipeline] }
+        [Pipeline] // script
+        [Pipeline] }
+        [Pipeline] // stage
+        [Pipeline] }
+        [Pipeline] // node
+        [Pipeline] End of Pipeline
+        Finished: SUCCESS
+
+# Day 79: Jenkins Deployment Job
+  # Requirement:
+        The Nautilus development team had a meeting with the DevOps team where they discussed automating the deployment of one of their apps using Jenkins (the one in Stratos Datacenter). They want to auto deploy the new changes in case any developer pushes to the repository. As per the requirements mentioned below configure the required Jenkins job.
+
+        Click on the Jenkins button on the top bar to access the Jenkins UI. Login using username admin and Adm!n321 password.
+
+
+        Similarly, you can access the Gitea UI using Gitea button. Username and password for Git are sarah and Sarah_pass123. Under user sarah you will find a repository named web that is already cloned on App Server 1 under sarah's home (/home/sarah/web). sarah is a developer who is working on this repository.
+
+
+        1. httpd is already installed and configured on the app server (listening on port 8080). Ensure the httpd service is running on App Server 1 (e.g. start it manually if needed). You can make starting/restarting httpd part of your Jenkins job if you prefer.
+
+
+        2. Create a Jenkins job named nautilus-app-deployment and configure it so that if anyone pushes any new change to the origin repository in master branch, the job should auto build and deploy the latest code on App Server 1 under /var/www/html directory.
+        Before deployment, ensure that the ownership of the /var/www/html directory is set to user sarah, so that Jenkins can successfully deploy files to that directory.
+
+
+        3. SSH into App Server 1 using sarah user credentials mentioned above. Under sarah user's home (/home/sarah/web) you will find a cloned Git repository named web. Under this repository there is an index.html file, update its content to Welcome to the xFusionCorp Industries, then push the changes to the origin into master branch. This push must trigger your Jenkins job and the latest changes must be deployed on the server, also make sure it deploys the entire repository content not only index.html file.
+
+
+        Click on the App button on the top bar to access the app. Please make sure the required content is loading on the main URL (e.g. http://stlb01:8091) i.e there should not be any sub-directory like http://stlb01:8091/web etc.
+
+
+        Note:
+        1. You might need to install some plugins and restart Jenkins service. So, we recommend clicking on Restart Jenkins when installation is complete and no jobs are running on plugin installation/update page i.e update centre. Also some times Jenkins UI gets stuck when Jenkins service restarts in the back end so in such case please make sure to refresh the UI page.
+
+
+        2. Make sure Jenkins job passes even on repetitive runs as validation may try to build the job multiple times.
+
+
+        3. Deployment related tasks should be done by sudo user on the destination server to avoid any permission issues so make sure to configure your Jenkins job accordingly.
+
+
+        4. For these kind of scenarios requiring changes to be done in a web UI, please take screenshots so that you can share it with us for review in case your task is marked incomplete. You may also consider using a screen recording software such as loom.com to record and share your work.
+
+  # Solution:
+        Step1: 
+            Validate Httpd service in Stapp01 server is running status- If not please start the service
+        Step 2:
+            Validate the Java version in both Jenkins and App server 1
+            Update the java version in App server 1 as it is running with jdk 11
+            sudo apt install openjdk-21-jdk
+            sudo update-alternatives --config java.
+            Java --version commans should show us the 21 version
+
+        Step 3:
+            Connect to the Jenkins server
+            Generate the SSH keys in jenkins server
+            Copy the ssh key to the App server through sarah user
+            ssh-keygen
+            ssh-copy-id sarah@stapp01
+            These command will help us to having password less authentions between jenkins and stapp01 server
+        Step 4:
+            Connect to the Jenkins UI using the Admin credentials
+            Navigate to plugins and install the 
+                SSH
+                Publish Over SSH
+                SSH Build Agents
+                Git
+                Gitea
+            # Adding Sarah user credentials
+            1. Go to Manage Jenkins → Credentials → System → Global credentials.
+            2. Click Add Credentials → Username with password.
+            3. Enter:
+            Username: sarah
+            Password: Sarah_pass123
+            ID: stapp01
+            Description: app Server SSH Access
+            Click OK.
+            # Adding Stapp01 as remote server
+            Go to Manage Jenkins → System → SSH remote server.
+            Under SSH Servers, click Add → 
+            Name: stapp01
+            Hostname: stapp01.stratos.xfusioncorp.com
+            Username: sarah
+            Click Advanced → Check Use password authentication
+            Password: Sarah_pass123
+            Port: 22
+            Click Test Configuration → Should show Success
+            # Adding the Git/Gitea Url details under System
+            Navigate to SCM --> Enter the Git/Gitea repository URL --> Select the sarah credentials already added
+            # Validate the permission for /var/www/html
+            Sarah user should have permission to this directory
+        Step 5:
+            Create the Shell script in stpp01 server under sarah user home directory
+            #bin/bash
+            # This script is used to deploy the code to the target server
+            ssh sarah@stapp01
+            git clone https://3000-port-i5k5ct3pchhjfd4w.labs.kodekloud.com/sarah/web.git /tmp/web
+            cd /tmp/web
+            cp -r /tmp/web/* /var/www/html/
+            rm -rf /tmp/web
+            This shell script should have permissions to sarah
+        Step 6:
+            Create the JOb --> New job --> Freestyle job
+            Select the Poll SCM --> Update schedule value as * * * * *
+            Source Code Management → Git:
+            Repository URL: https://3000-port-i5k5ct3pchhjfd4w.labs.kodekloud.com/sarah/web.git
+            Credentials: select sarah credentials
+            Branches: master
+            Build --> Execultshell script on remote server
+            in Pre build step give the shell details
+            Save the job
+        Step 7:
+            Login to the stapp01 server using sarah user 
+            modify the index.html file as specified and commit to the repository
+            Now Job shouls trigerr succussfully and able to see the changes
+
+            Output of Job:
+            Started by an SCM change
+            Running as SYSTEM
+            Building in workspace /var/lib/jenkins/workspace/nautilus-app-deployment
+            The recommended git tool is: NONE
+            using credential ebe94ffc-d6d6-4250-b20a-28630a00c1f1
+            > git rev-parse --resolve-git-dir /var/lib/jenkins/workspace/nautilus-app-deployment/.git # timeout=10
+            Fetching changes from the remote Git repository
+            > git config remote.origin.url https://3000-port-i5k5ct3pchhjfd4w.labs.kodekloud.com/sarah/web.git # timeout=10
+            Fetching upstream changes from https://3000-port-i5k5ct3pchhjfd4w.labs.kodekloud.com/sarah/web.git
+            > git --version # timeout=10
+            > git --version # 'git version 2.43.0'
+            using GIT_ASKPASS to set credentials 
+            > git fetch --tags --force --progress -- https://3000-port-i5k5ct3pchhjfd4w.labs.kodekloud.com/sarah/web.git +refs/heads/*:refs/remotes/origin/* # timeout=10
+            > git rev-parse refs/remotes/origin/master^{commit} # timeout=10
+            Checking out Revision beef33516f477fa6bfb84c44b71d63035664a04a (refs/remotes/origin/master)
+            > git config core.sparsecheckout # timeout=10
+            > git checkout -f beef33516f477fa6bfb84c44b71d63035664a04a # timeout=10
+            Commit message: "updated the file"
+            > git rev-list --no-walk cbc66ebc9e832e259c86987a7fc807b6f5b06698 # timeout=10
+            [SSH] executing pre build script:
+
+            sh Shell_deployment.sh
+            Pseudo-terminal will not be allocated because stdin is not a terminal.
+            Host key verification failed.
+            Cloning into '/tmp/web'...
+
+            [SSH] completed
+            [SSH] exit-status: 0
+
+            [SSH] executing post build script:
+
+
+            [Gitea] do not publish assets due to source being no GiteaSCMSource
+            Finished: SUCCESS
+
