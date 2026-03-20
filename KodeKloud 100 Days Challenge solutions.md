@@ -5045,3 +5045,121 @@ Linux Commands
             [Gitea] do not publish assets due to source being no GiteaSCMSource
             Finished: SUCCESS
 
+            # In above Shell script i have used the ssh command to login to stapp01 server, But as part SSH remote host i already configured the stapp01 server.
+
+            Due to that i got this error in Jenkins job run so we can remove the ssh step in script
+             Pseudo-terminal will not be allocated because stdin is not a terminal.
+            Host key verification failed.
+
+# Day 80: Jenkins Chained Builds
+  # Requirement:
+        The DevOps team was looking for a solution where they want to restart Apache service on all app servers if the deployment goes fine on these servers in Stratos Datacenter. After having a discussion, they came up with a solution to use Jenkins chained builds so that they can use a downstream job for services which should only be triggered by the deployment job. So as per the requirements mentioned below configure the required Jenkins jobs.
+
+            Click on the Jenkins button on the top bar to access the Jenkins UI. Login using username admin and Adm!n321 password.
+
+
+            Similarly you can access Gitea UI on port 3000 (or click the Gitea button) and username and password for Git is sarah and Sarah_pass123 respectively. Under user sarah you will find a repository named web.
+
+
+            Apache is already installed and configured on the app server. The doc root /var/www/html on App Server 1 is a local git repository tracking the origin web repository.
+
+
+            1. Create a Jenkins job named nautilus-app-deployment and configure it to pull changes from the master branch of the web repository on App Server 1 under /var/www/html directory.
+
+
+            2. Create another Jenkins job named manage-services and make it a downstream job for nautilus-app-deployment. Things to take care about this job are:
+
+
+            a. This job should restart httpd service on the app server (App Server 1).
+
+            b. Trigger this job only if the upstream job i.e nautilus-app-deployment is stable.
+
+
+            The LB server is already configured. Click on the App button on the top bar to access the app. Please make sure the required content is loading on the main URL (e.g. http://stlb01:8091) i.e there should not be a sub-directory like http://stlb01:8091/web etc.
+
+
+            Note:
+
+
+            1. You might need to install some plugins and restart Jenkins service. So, we recommend clicking on Restart Jenkins when installation is complete and no jobs are running on plugin installation/update page i.e update centre. Also some times Jenkins UI gets stuck when Jenkins service restarts in the back end so in such case please make sure to refresh the UI page.
+
+
+            2. Make sure Jenkins job passes even on repetitive runs as validation may try to build the job multiple times.
+
+
+            3. Deployment related tasks should be done by sudo user on the destination server to avoid any permission issues so make sure to configure your Jenkins job accordingly.
+
+
+            4. For these kind of scenarios requiring changes to be done in a web UI, please take screenshots so that you can share it with us for review in case your task is marked incomplete. You may also consider using a screen recording software such as loom.com to record and share your work.
+
+   # Solution:
+        Step 1:
+            Connect to the Jenkins server
+            Generate the SSH keys in jenkins server
+            Copy the ssh key to the App server through sarah user
+            ssh-keygen
+            ssh-copy-id sarah@stapp01
+            These command will help us to having password less authentions between jenkins and stapp01 server
+        Step 4:
+            Connect to the Jenkins UI using the Admin credentials
+            Navigate to plugins and install the 
+                SSH
+                Publish Over SSH
+                SSH Build Agents
+                Git
+                Gitea
+            # Adding Sarah user credentials
+            1. Go to Manage Jenkins → Credentials → System → Global credentials.
+            2. Click Add Credentials → Username with password.
+            3. Enter:
+            Username: sarah
+            Password: Sarah_pass123
+            ID: stapp01
+            Description: app Server SSH Access
+            Click OK.
+             1. Go to Manage Jenkins → Credentials → System → Global credentials.
+            2. Click Add Credentials → Username with password.
+            3. Enter:
+            Username: tony
+            Password: Ir0nM@n
+            ID: stapp01
+            Description: app Server SSH Access
+            Click OK.
+            # Adding Stapp01 as remote server
+            Go to Manage Jenkins → System → SSH remote server.
+            Under SSH Servers, click Add → 
+            Name: stapp01
+            Hostname: stapp01.stratos.xfusioncorp.com
+            Username: sarah
+            Click Advanced → Check Use password authentication
+            Password: Sarah_pass123
+            Port: 22
+            Click Test Configuration → Should show Success
+            # Adding the Git/Gitea Url details under System
+            Navigate to SCM --> Enter the Git/Gitea repository URL --> Select the sarah credentials already added
+            # Validate the permission for /var/www/html
+            Sarah user should have permission to this directory
+        Step 2:
+            1. Create a Job  with name nautilus-app-deployment
+            2. Select Git and update the Gitea repo url and credentials 
+            3. Build step --> execute shell script remote host
+            4. Update the below commands
+                 git clone https://3000-port-i5k5ct3pchhjfd4w.labs.kodekloud.com/sarah/web.git /tmp/web
+                cd /tmp/web
+                cp -r /tmp/web/* /var/www/html/
+                rm -rf /tmp/web
+            5 Select the Post-build Actions → Build other projects.
+                Enter:
+                Projects to build: manage-services
+                Check: Trigger only if build is stable
+
+
+
+        Step 3:
+           1. Create the JOb --> New job --> Freestyle job --> manage-services
+           2. Build → Add build step → Send files or execute commands over SSH
+           3. Select the app server 01 using the Tony credentials
+           4. Systemctl restart httpd
+           5. Save the job
+        Once both jobs are created run the nautilus-app-deployment and validate if changes are deploying and downstream project is running as expcetd
+        
