@@ -5265,3 +5265,90 @@ Linux Commands
         [Pipeline] sh
         [Pipeline] End of Pipeline
         Finished: SUCCESS
+# Task 82: Create Ansible Inventory for App Server Testing
+  # Requirement:
+        The Nautilus DevOps team is testing Ansible playbooks on various servers within their stack. They've placed some playbooks under /home/thor/playbook/ directory on the jump host and now intend to test them on app server 1 in Stratos DC. However, an inventory file needs creation for Ansible to connect to the respective app. Here are the requirements:
+
+        a. Create an ini type Ansible inventory file /home/thor/playbook/inventory on jump host.
+
+
+        b. Include App Server 1 in this inventory along with necessary variables for proper functionality.
+
+
+        c. Ensure the inventory hostname corresponds to the server name as per the wiki, for example stapp01 for app server 1 in Stratos DC.
+
+
+        Note: Validation will execute the playbook using the command ansible-playbook -i inventory playbook.yml. Ensure the playbook functions properly without any extra arguments.
+
+  # Solution:
+        Step 1:
+            Establish the SSH connectivity from Jumphost to Stapp01 server
+            thor@jump-host ~/playbook$ ssh-keygen
+            Generating public/private ed25519 key pair.
+            Enter file in which to save the key (/home/thor/.ssh/id_ed25519): 
+            Enter passphrase for "/home/thor/.ssh/id_ed25519" (empty for no passphrase): 
+            Enter same passphrase again: 
+            Your identification has been saved in /home/thor/.ssh/id_ed25519
+            Your public key has been saved in /home/thor/.ssh/id_ed25519.pub
+            The key fingerprint is:
+            SHA256:Sajcm/d6zsu9tm8aPcY0qB9osPD8CvgL8dv5l2JtMFc thor@jump-host
+            The key's randomart image is:
+            +--[ED25519 256]--+
+            |                 |
+            |       .         |
+            |      . .        |
+            |   . o . .   .E  |
+            |    + o S   ..o  |
+            |     + * ooo.+ . |
+            |    o = = +=o.=  |
+            |     o = B+o*+.. |
+            |      +.=BO***.  |
+            +----[SHA256]-----+
+            thor@jump-host ~/playbook$ ssh-copy-id tony@stapp01
+            /usr/bin/ssh-copy-id: INFO: Source of key(s) to be installed: "/home/thor/.ssh/id_ed25519.pub"
+            /usr/bin/ssh-copy-id: INFO: attempting to log in with the new key(s), to filter out any that are already installed
+            /usr/bin/ssh-copy-id: INFO: 1 key(s) remain to be installed -- if you are prompted now it is to install the new keys
+            tony@stapp01's password: 
+
+            Number of key(s) added: 1
+
+            Now try logging into the machine, with: "ssh 'tony@stapp01'"
+            and check to make sure that only the key(s) you wanted were added.
+
+            thor@jump-host ~/playbook$ ssh tony@stapp01
+            [tony@stapp01 ~]$ exit
+            logout
+            Connection to stapp01 closed.
+        Step 2:
+            Create the inventory file as per below
+            thor@jump-host ~/playbook$ cat inventory 
+            stapp01 ansible_user=tony
+        Step 3:
+            Validate the connection between the jumphost and ansible server using ping module
+            thor@jump-host ~/playbook$ ansible all -m ping -i inventory 
+            stapp01 | SUCCESS => {
+                "ansible_facts": {
+                    "discovered_interpreter_python": "/usr/bin/python3"
+                },
+                "changed": false,
+                "ping": "pong"
+            }
+            Note: Will get sucussfull response only when we establish the SSH connection
+            Ran the playbook to validate 
+            thor@jump-host ~/playbook$ ansible-playbook -i inventory playbook.yml 
+
+            PLAY [all] **************************************************************************
+
+            TASK [Gathering Facts] **************************************************************
+            ok: [stapp01]
+
+            TASK [Install httpd package] ********************************************************
+            changed: [stapp01]
+
+            TASK [Start service httpd] **********************************************************
+            changed: [stapp01]
+
+            PLAY RECAP **************************************************************************
+            stapp01                    : ok=3    changed=2    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+
+            thor@jump-host ~/playbook$ 
