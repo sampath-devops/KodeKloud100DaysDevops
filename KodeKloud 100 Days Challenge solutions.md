@@ -5352,3 +5352,54 @@ Linux Commands
             stapp01                    : ok=3    changed=2    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
 
             thor@jump-host ~/playbook$ 
+
+
+# Task 83: Troubleshoot and Create Ansible Playbook
+  # Requirement:
+        An Ansible playbook needs completion on the jump host, where a team member left off. Below are the details:
+
+        The inventory file /home/thor/ansible/inventory requires adjustments. The playbook must run on App Server 1 in Stratos DC. Update the inventory accordingly.
+
+
+        Create a playbook /home/thor/ansible/playbook.yml. Include a task to create an empty file /tmp/file.txt on App Server 1.
+
+
+        Note: Validation will run the playbook using the command ansible-playbook -i inventory playbook.yml. Ensure the playbook works without any additional arguments.
+
+  # Solution:
+        thor@jump-host ~/ansible$ cat inventory 
+        stapp01 ansible_user=tony ansible_ssh_pass=Ir0nM@n ansible_ssh_common_args='-o StrictHostKeyChecking=no'
+        thor@jump-host ~/ansible$  ansible all -m ping -i inventory 
+        stapp01 | SUCCESS => {
+            "ansible_facts": {
+                "discovered_interpreter_python": "/usr/bin/python3"
+            },
+            "changed": false,
+            "ping": "pong"
+        }
+
+        # Playbook.yml file
+        ---
+        - name: playbook to create the empty text file
+          hosts: all
+          become: yes
+          tasks:
+             - name: create the empty file
+               ansible.builtin.file:
+                 path: "/tmp/file.txt"
+                 state: touch
+
+
+        thor@jump-host ~/ansible$ ansible-playbook -i inventory playbook.yml 
+
+        PLAY [playbook to create the empty text file] *******************************************
+
+        TASK [Gathering Facts] ******************************************************************
+        ok: [stapp01]
+
+        TASK [create the empty file] ************************************************************
+        changed: [stapp01]
+
+        PLAY RECAP ******************************************************************************
+        stapp01                    : ok=2    changed=1    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+
