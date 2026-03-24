@@ -379,8 +379,10 @@ Linux Commands
         - yum install git # installs the git in server
         - git init --bare <<folder.git>> # it create the bare repository 
 # Day 22: Clone Git Repository on Storage Server
-  # Requirement: Clone the git repo
-  # Solution: git clone -l /opt/games.git 
+  # Requirement: 
+    Clone the git repo
+  # Solution: 
+    git clone -l /opt/games.git 
 
 # Task 23: Fork a Git Repository
   # Requirement: 
