@@ -5403,3 +5403,37 @@ Linux Commands
         PLAY RECAP ******************************************************************************
         stapp01                    : ok=2    changed=1    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
 
+
+# Task 84: Copy Data to App Servers using Ansible
+  # Requirement:
+        The Nautilus DevOps team needs to copy data from the jump host to all application servers in Stratos DC using Ansible. Execute the task with the following details:
+        a. Create an inventory file /home/thor/ansible/inventory on jump_host and add all application servers as managed nodes.
+
+
+        b. Create a playbook /home/thor/ansible/playbook.yml on the jump host to copy the /usr/src/security/index.html file to all application servers, placing it at /opt/security.
+
+
+        Note: Validation will run the playbook using the command ansible-playbook -i inventory playbook.yml. Ensure the playbook functions properly without any extra arguments.
+
+  # Solution:
+        Create the inventory file with app server details 
+
+        thor@jump-host ~/ansible$ cat inventory 
+        stapp01 ansible_user=tony ansible_ssh_pass=Ir0nM@n ansible_ssh_common_args='-o StrictHostKeyChecking=no'
+        stapp02 ansible_user=steve ansible_ssh_pass=Am3ric@ ansible_ssh_common_args='-o StrictHostKeyChecking=no'
+        stapp03 ansible_user=banner ansible_ssh_pass=BigGr33n ansible_ssh_common_args='-o StrictHostKeyChecking=no'
+
+        Write the plabook.yml file to copy the files to all app servers
+
+        ---
+        - name: playbook to copy the files to all app servers
+          hosts: all
+          become: yes
+          tasks:
+            - name: Copy the files
+              ansible.builtin.copy:
+                src: /usr/src/security/index.html
+                dest: /opt/security/
+
+        thor@jump-host ~/ansible$ ansible-playbook -i inventory playbook.yml 
+        This playbook will copy the files to all app serves as we mentioned "hosts as all" in playbook
