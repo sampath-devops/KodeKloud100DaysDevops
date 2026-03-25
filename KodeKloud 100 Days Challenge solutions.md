@@ -5439,3 +5439,89 @@ Linux Commands
 
         thor@jump-host ~/ansible$ ansible-playbook -i inventory playbook.yml 
         This playbook will copy the files to all app serves as we mentioned "hosts as all" in playbook
+
+
+# Day 85: Create Files on App Servers using Ansible
+  # Requirement:
+        The Nautilus DevOps team is testing various Ansible modules on servers in Stratos DC. They're currently focusing on file creation on remote hosts using Ansible. Here are the details:
+        a. Create an inventory file ~/playbook/inventory on jump host and include all app servers.
+
+        b. Create a playbook ~/playbook/playbook.yml to create a blank file /usr/src/webdata.txt on all app servers.
+
+        c. Set the permissions of the /usr/src/webdata.txt file to 0777.
+
+        d. Ensure the user/group owner of the /usr/src/webdata.txt file is tony on app server 1, steve on app server 2 and banner on app server 3.
+
+        Note: Validation will execute the playbook using the command ansible-playbook -i inventory playbook.yml, so ensure the playbook functions correctly without any additional arguments.
+
+
+  # Solution:
+        # Inventory file with all app server 
+
+        thor@jump-host ~/ansible$ cat inventory 
+        stapp01 ansible_user=tony ansible_ssh_pass=Ir0nM@n ansible_ssh_common_args='-o StrictHostKeyChecking=no'
+        stapp02 ansible_user=steve ansible_ssh_pass=Am3ric@ ansible_ssh_common_args='-o StrictHostKeyChecking=no'
+        stapp03 ansible_user=banner ansible_ssh_pass=BigGr33n ansible_ssh_common_args='-o StrictHostKeyChecking=no'
+
+        thor@jump-host ~/playbook$ ansible all -m ping -i inventory 
+        stapp03 | SUCCESS => {
+            "ansible_facts": {
+                "discovered_interpreter_python": "/usr/bin/python3"
+            },
+            "changed": false,
+            "ping": "pong"
+        }
+        stapp01 | SUCCESS => {
+            "ansible_facts": {
+                "discovered_interpreter_python": "/usr/bin/python3"
+            },
+            "changed": false,
+            "ping": "pong"
+        }
+        stapp02 | SUCCESS => {
+            "ansible_facts": {
+                "discovered_interpreter_python": "/usr/bin/python3"
+            },
+            "changed": false,
+            "ping": "pong"
+        }
+
+        # Playbook for creating empty file with specified user & group 
+        ---
+        - name: Create an empty file with specific owner and permissions
+          hosts: all
+          become: true  # Needed to manage files that may require elevated privileges
+          tasks:
+            - name: Create file and set ownership and mode
+              ansible.builtin.file:
+                path: /usr/src/webdata.txt # Specify the full path to the file
+                state: touch                 # Creates an empty file if it does not exist
+                owner: "{{ansible_user}}"              # Set the owner to a specific individual user
+                group: "{{ansible_user}}"          # Set the group (optional, but good practice)
+                mode: '0777'                 # Set the file permissions in octal notation
+
+
+        thor@jump-host ~/playbook$ ansible-playbook -i inventory playbook.yml 
+
+        PLAY [Create an empty file with specific owner and permissions] *************************
+
+        TASK [Gathering Facts] ******************************************************************
+        ok: [stapp01]
+        ok: [stapp02]
+        ok: [stapp03]
+
+        TASK [Create file and set ownership and mode] *******************************************
+        changed: [stapp01]
+        changed: [stapp02]
+        changed: [stapp03]
+
+        PLAY RECAP ******************************************************************************
+        stapp01                    : ok=2    changed=1    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+        stapp02                    : ok=2    changed=1    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+        stapp03                    : ok=2    changed=1    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+
+        thor@jump-host ~/playbook$ 
+        Empty file created with required user & group
+        [tony@stapp01 src]$ ls -ltr webdata.txt 
+        -rwxrwxrwx 1 tony tony 0 Mar 25 09:34 webdata.txt
+        [tony@stapp01 src]$ 
