@@ -5525,3 +5525,31 @@ Linux Commands
         [tony@stapp01 src]$ ls -ltr webdata.txt 
         -rwxrwxrwx 1 tony tony 0 Mar 25 09:34 webdata.txt
         [tony@stapp01 src]$ 
+
+# Day 86: Ansible Ping Module Usage
+   # Requirement:
+        The Nautilus DevOps team is planning to test several Ansible playbooks on different app servers in Stratos DC. Before that, some pre-requisites must be met. Essentially, the team needs to set up a password-less SSH connection between Ansible controller and Ansible managed nodes. One of the tickets is assigned to you; please complete the task as per details mentioned below:
+
+
+            a. Jump host is our Ansible controller, and we are going to run Ansible playbooks through thor user from jump host.
+
+
+            b. There is an inventory file /home/thor/ansible/inventory on jump host. Using that inventory file test Ansible ping from jump host to App Server 1, make sure ping works.
+
+  # Solution:
+        Modify the inventory file by adding the SSh user name for app server 1
+            thor@jump-host ~/ansible$ cat inventory 
+            stapp01 ansible_ssh_user=tony
+            stapp02 ansible_ssh_pass=Am3ric@
+            stapp03 ansible_ssh_pass=BigGr33n
+        Establish the SSH connection between thor user in jumphost to tony user in stapp01 server 
+        Run the ping module with below command - This should respond with "ping: pong"
+        thor@jump-host ~/ansible$ ansible stapp01 -m ping -i inventory 
+        stapp01 | SUCCESS => {
+            "ansible_facts": {
+                "discovered_interpreter_python": "/usr/bin/python3"
+            },
+            "changed": false,
+            "ping": "pong"
+        }
+        thor@jump-host ~/ansible$ 
