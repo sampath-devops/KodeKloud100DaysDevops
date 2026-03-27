@@ -5553,3 +5553,87 @@ Linux Commands
             "ping": "pong"
         }
         thor@jump-host ~/ansible$ 
+# Day 87: Ansible Install Package
+  # Requirement:
+        The Nautilus Application development team wanted to test some applications on app servers in Stratos Datacenter. They shared some pre-requisites with the DevOps team, and packages need to be installed on app servers. Since we are already using Ansible for automating such tasks, please perform this task using Ansible as per details mentioned below:
+
+            Create an inventory file /home/thor/playbook/inventory on jump host and add all app servers in it.
+            Create an Ansible playbook /home/thor/playbook/playbook.yml to install httpd package on all  app servers using Ansible yum module.
+            Make sure user thor should be able to run the playbook on jump host.
+            Note: Validation will try to run playbook using command ansible-playbook -i inventory playbook.yml so please make sure playbook works this way, without passing any extra arguments.
+
+
+ # Solution:
+        1. Create the inventory file with all app server details
+         stapp01 ansible_user=tony ansible_ssh_pass=Ir0nM@n ansible_ssh_common_args='-o StrictHostKeyChecking=no'
+        stapp02 ansible_user=steve ansible_ssh_pass=Am3ric@ ansible_ssh_common_args='-o StrictHostKeyChecking=no'
+        stapp03 ansible_user=banner ansible_ssh_pass=BigGr33n ansible_ssh_common_args='-o StrictHostKeyChecking=no'
+        2. Validate the connection using below command
+        thor@jump-host ~/playbook$ ansible all -m ping -i inventory 
+        stapp03 | SUCCESS => {
+            "ansible_facts": {
+                "discovered_interpreter_python": "/usr/bin/python3"
+            },
+            "changed": false,
+            "ping": "pong"
+        }
+        stapp01 | SUCCESS => {
+            "ansible_facts": {
+                "discovered_interpreter_python": "/usr/bin/python3"
+            },
+            "changed": false,
+            "ping": "pong"
+        }
+        stapp02 | SUCCESS => {
+            "ansible_facts": {
+                "discovered_interpreter_python": "/usr/bin/python3"
+            },
+            "changed": false,
+            "ping": "pong"
+        }
+
+        3. Create the playbook to install HTTPD
+        thor@jump-host ~/playbook$ vi playbook.yml
+        ---
+        - name: install HTTPD package
+          hosts: all
+          become: yes
+
+          tasks:
+            - name: install httpd package
+              yum:
+                name: httpd
+                state: present
+            - name: start httpd service
+              service:
+                name: httpd
+                state: started
+                enabled: yes
+        thor@jump-host ~/playbook$ vi playbook.yml
+        thor@jump-host ~/playbook$ ansible-playbook playbook.yml -i inventory 
+
+        PLAY [install HTTPD package] ********************************************************
+
+        TASK [Gathering Facts] **************************************************************
+        ok: [stapp02]
+        ok: [stapp03]
+        ok: [stapp01]
+
+        TASK [install httpd package] ********************************************************
+        changed: [stapp03]
+        changed: [stapp01]
+        changed: [stapp02]
+
+        TASK [start httpd service] **********************************************************
+        changed: [stapp01]
+        changed: [stapp03]
+        changed: [stapp02]
+
+        PLAY RECAP **************************************************************************
+        stapp01                    : ok=3    changed=2    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+        stapp02                    : ok=3    changed=2    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+        stapp03                    : ok=3    changed=2    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+
+        thor@jump-host ~/playbook$ 
+
+
