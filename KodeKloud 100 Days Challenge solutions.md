@@ -5690,3 +5690,84 @@ Linux Commands
                owner: apache
                group: apache
                mode: '0744'
+
+# Day 89: Ansible Manage Services
+   # Requirement:
+        Developers are looking for dependencies to be installed and run on Nautilus app servers in Stratos DC. They have shared some requirements with the DevOps team. Because we are now managing packages installation and services management using Ansible, some playbooks need to be created and tested. As per details mentioned below please complete the task:
+
+        a. On jump host create an Ansible playbook /home/thor/ansible/playbook.yml and configure it to install vsftpd on all app servers.
+
+        b. After installation make sure to start and enable vsftpd service on all app servers.
+
+        c. The inventory /home/thor/ansible/inventory is already there on jump host.
+
+        d. Make sure user thor should be able to run the playbook on jump host.
+        Note: Validation will try to run playbook using command ansible-playbook -i inventory playbook.yml so please make sure playbook works this way, without passing any extra arguments.
+    
+   # Solution:
+        Playbook to install the VSFTPD 
+
+        ---
+        - name: Instalation of VSFTD
+          hosts: all
+          become: yes
+          tasks:
+            - name: Install vsftpd
+              ansible.builtin.yum:
+                name: vsftpd
+                state: present
+            - name: Start vsftpd
+              ansible.builtin.service:
+                name: vsftpd
+                state: started
+                enabled: yes
+            - name: status of vsftpd
+              ansible.builtin.service_facts:
+            - name: verifying the service
+              ansible.builtin.assert:
+                that: ansible_facts.services['vsftpd.service'].state== 'running'
+
+        thor@jump-host ~/ansible$ ansible-playbook playbook.yml -i inventory 
+
+        PLAY [Instalation of VSFTD] *********************************************************
+
+        TASK [Gathering Facts] **************************************************************
+        ok: [stapp01]
+        ok: [stapp02]
+        ok: [stapp03]
+
+        TASK [Install vsftpd] ***************************************************************
+        changed: [stapp01]
+        changed: [stapp03]
+        changed: [stapp02]
+
+        TASK [Start vsftpd] *****************************************************************
+        changed: [stapp03]
+        changed: [stapp01]
+        changed: [stapp02]
+
+        TASK [status of vsftpd] *************************************************************
+        ok: [stapp03]
+        ok: [stapp01]
+        ok: [stapp02]
+
+        TASK [verifying the service] ********************************************************
+        ok: [stapp01] => {
+            "changed": false,
+            "msg": "All assertions passed"
+        }
+        ok: [stapp02] => {
+            "changed": false,
+            "msg": "All assertions passed"
+        }
+        ok: [stapp03] => {
+            "changed": false,
+            "msg": "All assertions passed"
+        }
+
+        PLAY RECAP **************************************************************************
+        stapp01                    : ok=5    changed=2    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+        stapp02                    : ok=5    changed=2    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+        stapp03                    : ok=5    changed=2    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+
+        thor@jump-host ~/ansible$  
