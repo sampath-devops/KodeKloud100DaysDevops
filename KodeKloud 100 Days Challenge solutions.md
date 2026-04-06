@@ -5889,6 +5889,156 @@ Linux Commands
 
         thor@jump-host ~/ansible$ 
 
+# Day 91: Ansible Lineinfile Module
+  # Requirement:
+    The Nautilus DevOps team want to install and set up a simple httpd web server on all app servers in Stratos DC. They also want to deploy a sample web page using Ansible. Therefore, write the required playbook to complete this task as per details mentioned below.
 
+    We already have an inventory file under /home/thor/ansible directory on jump host. Write a playbook playbook.yml under /home/thor/ansible directory on jump host itself. Using the playbook perform below given tasks:
+
+    Install httpd web server on all app servers, and make sure its service is up and running.
+    Create a file /var/www/html/index.html with content:
+    This is a Nautilus sample file, created using Ansible!
+    Using lineinfile Ansible module add some more content in /var/www/html/index.html file. Below is the content:
+    Welcome to xFusionCorp Industries!
+    Also make sure this new line is added at the top of the file.
+    The /var/www/html/index.html file's user and group owner should be apache on all app servers. 
+    The /var/www/html/index.html file's permissions should be 0755 on all app servers.
+    Note: Validation will try to run the playbook using command ansible-playbook -i inventory playbook.yml so please make sure the playbook works this way without passing any extra arguments.
+  # Solution:
+         
+        ---
+        - name: Install HTTPD and deploy sample web page
+          hosts: app_servers
+          become: yes
+
+          tasks:
+            - name: Install httpd package
+              yum:
+                name: httpd
+                state: present
+
+            - name: Ensure httpd service is running and enabled
+              service:
+                name: httpd
+                state: started
+                enabled: yes
+
+            - name: Create index.html with initial content
+              copy:
+                dest: /var/www/html/index.html
+                content: |
+                This is a Nautilus sample file, created using Ansible!
+                owner: apache
+                group: apache
+                mode: '0777'
+
+            - name: Insert additional line at top of file
+              lineinfile:
+                path: /var/www/html/index.html
+                line: "Welcome to xFusionCorp Industries!"
+                insertbefore: BOF
+                owner: apache
+                group: apache
+                mode: '0777'
+        thor@jump-host ~/ansible$ ansible-playbook playbook.yml -i inventory 
+
+        PLAY [Install HTTPD and deploy sample web page] *****************************************
+
+        TASK [Gathering Facts] ******************************************************************
+        ok: [stapp02]
+        ok: [stapp03]
+        ok: [stapp01]
+
+        TASK [Install httpd package] ************************************************************
+        changed: [stapp02]
+        changed: [stapp01]
+        changed: [stapp03]
+
+        TASK [Ensure httpd service is running and enabled] **************************************
+        changed: [stapp03]
+        changed: [stapp02]
+        changed: [stapp01]
+
+        TASK [Create index.html with initial content] *******************************************
+        changed: [stapp02]
+        changed: [stapp03]
+        changed: [stapp01]
+
+        TASK [Insert additional line at top of file] ********************************************
+        changed: [stapp02]
+        changed: [stapp03]
+        changed: [stapp01]
+
+        PLAY RECAP ******************************************************************************
+        stapp01                    : ok=5    changed=4    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+        stapp02                    : ok=5    changed=4    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+        stapp03                    : ok=5    changed=4    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+
+        thor@jump-host ~/ansible$ 
+
+# Day 92: Managing Jinja2 Templates Using Ansible
+  # Requirement:
+        One of the Nautilus DevOps team members is working on to develop a role for httpd installation and configuration. Work is almost completed, however there is a requirement to add a jinja2 template for index.html file. Additionally, the relevant task needs to be added inside the role. The inventory file ~/ansible/inventory is already present on jump host that can be used. Complete the task as per details mentioned below:
+
+        a. Update ~/ansible/playbook.yml playbook to run the httpd role on App Server 2.
+
+        b. Create a jinja2 template index.html.j2 under /home/thor/ansible/role/httpd/templates/ directory and add a line This file was created using Ansible on <respective server> (for example This file was created using Ansible on stapp01 in case of App Server 1). Also please make sure not to hard code the server name inside the template. Instead, use inventory_hostname variable to fetch the correct value.
+
+        c. Add a task inside /home/thor/ansible/role/httpd/tasks/main.yml to copy this template on App Server 2 under /var/www/html/index.html. Also make sure that /var/www/html/index.html file's permissions are 0644.
+
+        d. The user/group owner of /var/www/html/index.html file must be respective sudo user of the server (for example tony in case of stapp01).
+
+        Note: Validation will try to run the playbook using command ansible-playbook -i inventory playbook.yml so please make sure the playbook works this way without passing any extra arguments.
+
+  # Solution:   
+        1. Update the playbook.yml file to run on the stapp02 server
+        2. Update the jinja2/j2 template file as per below
+            thor@jump-host ~/ansible$ cat role/httpd/templates/index.html.j2 
+            This file was created using Ansible on {{ inventory_hostname }}
+            thor@jump-host ~/ansible$ 
+        3 Update the main.yml file under tasks directory as per below to copy the template file to remote server with with permossion and group & user details
+            thor@jump-host ~/ansible$ cat role/httpd/tasks/main.yml 
+            ---
+            # tasks file for role/test
+
+            - name: install the latest version of HTTPD
+              yum:
+                name: httpd
+                state: latest
+
+            - name: Start service httpd
+              service:
+                name: httpd
+                state: started
+
+            - name: Copying the tempate to app server
+              template:
+                src: index.html.j2
+                dest: /var/www/html/index.html
+                owner: "{{ ansible_user }}"
+                group: "{{ ansible_user }}"
+                mode: '0644'
+
+        
+        thor@jump-host ~/ansible$ ansible-playbook -i inventory playbook.yml 
+
+        PLAY [stapp02] **************************************************************************
+
+        TASK [Gathering Facts] ******************************************************************
+        ok: [stapp02]
+
+        TASK [role/httpd : install the latest version of HTTPD] *********************************
+        changed: [stapp02]
+
+        TASK [role/httpd : Start service httpd] *************************************************
+        changed: [stapp02]
+
+        TASK [role/httpd : Copying the tempate to app server] ***********************************
+        changed: [stapp02]
+
+        PLAY RECAP ******************************************************************************
+        stapp02                    : ok=4    changed=1    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+
+        thor@jump-host ~/ansible$ 
 
 
