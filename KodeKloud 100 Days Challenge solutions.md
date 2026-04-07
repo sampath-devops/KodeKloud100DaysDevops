@@ -6040,5 +6040,94 @@ Linux Commands
         stapp02                    : ok=4    changed=1    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
 
         thor@jump-host ~/ansible$ 
+# Day 93: Using Ansible Conditionals
+  # Requirement:
+     The Nautilus DevOps team had a discussion about, how they can train different team members to use Ansible for different automation tasks. There are numerous ways to perform a particular task using Ansible, but we want to utilize each aspect that Ansible offers. The team wants to utilise Ansible's conditionals to perform the following task:
 
+
+        An inventory file is already placed under /home/thor/ansible directory on jump host, with all the Stratos DC app servers included.
+
+
+        Create a playbook /home/thor/ansible/playbook.yml and make sure to use Ansible's when conditionals statements to perform the below given tasks.
+
+
+        Copy blog.txt file present under /usr/src/security directory on jump host to App Server 1 under /opt/security directory. Its user and group owner must be user tony and its permissions must be 0744 .
+
+
+        Copy story.txt file present under /usr/src/security directory on jump host to App Server 2 under /opt/security directory. Its user and group owner must be user steve and its permissions must be 0744 .
+
+
+        Copy media.txt file present under /usr/src/security directory on jump host to App Server 3 under /opt/security directory. Its user and group owner must be user banner and its permissions must be 0744.
+
+
+        NOTE: You can use ansible_nodename variable from gathered facts with when condition. Additionally, please make sure you are running the play for all hosts i.e use - hosts: all.
+
+
+        Note: Validation will try to run the playbook using command ansible-playbook -i inventory playbook.yml, so please make sure the playbook works this way without passing any extra arguments.
+
+  # Solution:
+        Playbook for above requirement:
+
+        ---
+        - name: Copying the files to remote servers
+          hosts: all
+          become: yes
+          tasks:
+            - name: copying the blog.txt file to app server1 {{ inventory_hostname }}
+              copy:
+                src: /usr/src/security/blog.txt
+                dest: /opt/security/
+                owner: "{{ ansible_user }}"
+                group: "{{ ansible_user }}"
+                mode: '0744'
+              when: inventory_hostname == 'stapp01'
+
+            - name: copying the story.txt file to app server2 {{ inventory_hostname }}
+              copy:
+                src: /usr/src/security/story.txt
+                dest: /opt/security/
+                owner: "{{ ansible_user }}"
+                group: "{{ ansible_user }}"
+                mode: '0744'
+              when: inventory_hostname == 'stapp02'
+
+            - name: copying the media.txt file to app server3 {{ inventory_hostname }}
+              copy:
+                src: /usr/src/security/media.txt
+                dest: /opt/security/
+                owner: "{{ ansible_user }}"
+                group: "{{ ansible_user }}"
+                mode: '0744'
+              when: inventory_hostname == 'stapp03'
+
+        thor@jump-host ~/ansible$ ansible-playbook -i inventory playbook.yml 
+
+        PLAY [Copying the files to remote servers] **********************************************
+
+        TASK [Gathering Facts] ******************************************************************
+        ok: [stapp02]
+        ok: [stapp03]
+        ok: [stapp01]
+
+        TASK [copying the blog.txt file to app server1 stapp01] *********************************
+        skipping: [stapp02]
+        skipping: [stapp03]
+        changed: [stapp01]
+
+        TASK [copying the story.txt file to app server2 stapp01] ********************************
+        skipping: [stapp01]
+        skipping: [stapp03]
+        changed: [stapp02]
+
+        TASK [copying the media.txt file to app server3 stapp01] ********************************
+        skipping: [stapp01]
+        skipping: [stapp02]
+        changed: [stapp03]
+
+        PLAY RECAP ******************************************************************************
+        stapp01                    : ok=2    changed=1    unreachable=0    failed=0    skipped=2    rescued=0    ignored=0   
+        stapp02                    : ok=2    changed=1    unreachable=0    failed=0    skipped=2    rescued=0    ignored=0   
+        stapp03                    : ok=2    changed=1    unreachable=0    failed=0    skipped=2    rescued=0    ignored=0   
+
+        thor@jump-host ~/ansible$ 
 
